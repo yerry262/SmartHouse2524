@@ -1,0 +1,43 @@
+{
+  "name": "smarthouse2524",
+  "version": "1.0.0",
+  "description": "Smart Home Control System",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "nodemon --ignore 'server/data/*' server/index.js",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "install-all": "npm install && cd client && npm install"
+  },
+  "dependencies": {
+    "@smartthings/core-sdk": "^8.4.1",
+    "alexa-remote2": "^8.0.4",
+    "axios": "^1.13.2",
+    "bonjour-service": "^1.2.1",
+    "castv2-client": "^1.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "google-tts-api": "^0.0.4",
+    "lgtv2": "^1.6.3",
+    "lifx-lan-client": "^2.1.2",
+    "miio": "^0.15.6",
+    "modbus-serial": "^8.0.23",
+    "nanoleaf-client-multi": "^2.0.1",
+    "node-fetch": "^3.3.2",
+    "node-hue-api": "^5.0.0-beta.16",
+    "node-ssdp": "^4.0.1",
+    "ring-client-api": "^11.7.2",
+    "samsung-tv-control": "^1.14.0",
+    "sonos": "^1.14.2",
+    "tplink-smarthome-api": "^5.0.0",
+    "wemo-client": "^0.15.0",
+    "ws": "^8.14.2",
+    "wyze-node": "^2.0.6"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.2"
+  }
+}

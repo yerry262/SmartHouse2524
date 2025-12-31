@@ -1,0 +1,1268 @@
+[
+  {
+    "id": "NjAzOEUwRUUyREE4",
+    "type": "wemo-plug",
+    "name": "Pump",
+    "ipAddress": "192.168.4.27",
+    "ip": "192.168.4.27",
+    "mac": "6038E0EE2DA8",
+    "model": "Socket",
+    "manufacturer": "Belkin",
+    "serialNumber": "221707K010311B",
+    "lastSeen": "2025-12-31T07:12:39.337Z",
+    "firstSeen": "2025-12-31T06:29:36.969Z",
+    "status": "online",
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "60:38:e0:ee:2d:a9",
+      "vendor": "Unknown"
+    },
+    "hostname": null,
+    "vendor": "Unknown",
+    "openPorts": [],
+    "confidence": 0
+  },
+  {
+    "id": "NjAzOEUwNDQ5OTQ4",
+    "type": "wemo-plug",
+    "name": "Backyard Flood Lights South",
+    "ipAddress": "192.168.4.32",
+    "ip": "192.168.4.32",
+    "mac": "6038E0449948",
+    "model": "LightSwitch",
+    "manufacturer": "Belkin",
+    "serialNumber": "221703K1301636",
+    "lastSeen": "2025-12-31T07:12:39.337Z",
+    "firstSeen": "2025-12-31T06:29:36.969Z",
+    "status": "online",
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "60:38:e0:44:99:49",
+      "vendor": "Unknown"
+    },
+    "hostname": null,
+    "vendor": "Unknown",
+    "openPorts": [],
+    "confidence": 0
+  },
+  {
+    "id": "MTQ5MTgyQzlCOUZD",
+    "type": "wemo-plug",
+    "name": "600 W led",
+    "ipAddress": "192.168.4.48",
+    "ip": "192.168.4.48",
+    "mac": "149182C9B9FC",
+    "model": "Socket",
+    "manufacturer": "Belkin",
+    "serialNumber": "221617K0101959",
+    "lastSeen": "2025-12-31T07:12:39.337Z",
+    "firstSeen": "2025-12-31T06:29:36.969Z",
+    "status": "online",
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "14:91:82:c9:b9:fd",
+      "vendor": "Unknown"
+    },
+    "hostname": null,
+    "vendor": "Unknown",
+    "openPorts": [],
+    "confidence": 0
+  },
+  {
+    "id": "NjAzOEUwNDQ5NDM0",
+    "type": "wemo-plug",
+    "name": "Dads Patio Lights",
+    "ipAddress": "192.168.4.29",
+    "ip": "192.168.4.29",
+    "mac": "6038E0449434",
+    "model": "LightSwitch",
+    "manufacturer": "Belkin",
+    "serialNumber": "221703K13014F1",
+    "lastSeen": "2025-12-31T07:12:39.337Z",
+    "firstSeen": "2025-12-31T06:29:36.969Z",
+    "status": "online",
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "60:38:e0:44:94:35",
+      "vendor": "Unknown"
+    },
+    "hostname": null,
+    "vendor": "Unknown",
+    "openPorts": [],
+    "confidence": 0
+  },
+  {
+    "id": "14918248b13d",
+    "type": "wemo-plug",
+    "name": "Unknown Device (50)",
+    "ipAddress": "192.168.4.50",
+    "ip": "192.168.4.50",
+    "mac": "14:91:82:48:b1:3d",
+    "model": "LightSwitch",
+    "manufacturer": "Belkin",
+    "serialNumber": "221611K130121D",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "firstSeen": "2025-12-31T06:29:36.970Z",
+    "status": "online",
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "14:91:82:48:b1:3d",
+      "vendor": "Unknown"
+    },
+    "hostname": null,
+    "vendor": "Unknown",
+    "openPorts": [],
+    "confidence": 0
+  },
+  {
+    "id": "MTkyLjE2OC40LjE",
+    "type": "eero",
+    "name": "eeroOS/latest UPnP/1.0 eero/latest",
+    "ip": "192.168.4.1",
+    "port": 1900,
+    "status": "online",
+    "lastSeen": "2025-12-31T07:12:39.338Z",
+    "metadata": {
+      "CACHE-CONTROL": "max-age=1800",
+      "DATE": "Wed, 31 Dec 2025 07:12:29 GMT",
+      "EXT": "",
+      "LOCATION": "http://192.168.4.1:1900/igd.xml",
+      "SERVER": "eeroOS/latest UPnP/1.0 eero/latest",
+      "ST": "urn:schemas-upnp-org:service:WANIPConnection:1",
+      "USN": "uuid:fcdb9233-a63f-41da-b42c-7cfeb99c8adf::urn:schemas-upnp-org:service:WANIPConnection:1",
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "18:90:88:6b:00:f2",
+      "vendor": "eero (Amazon)"
+    },
+    "firstSeen": "2025-12-31T06:29:36.970Z",
+    "mac": "18:90:88:6b:00:f2",
+    "hostname": null,
+    "vendor": "eero (Amazon)",
+    "openPorts": [],
+    "confidence": 98
+  },
+  {
+    "id": "6855d49e8c92",
+    "type": "printer",
+    "name": "EPSON WF-3820 Series",
+    "ip": "192.168.4.151",
+    "port": 80,
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "metadata": {
+      "addresses": [
+        "192.168.4.151"
+      ],
+      "subtypes": [],
+      "rawTxt": [
+        {
+          "type": "Buffer",
+          "data": []
+        }
+      ],
+      "txt": {},
+      "name": "EPSON WF-3820 Series",
+      "fqdn": "EPSON WF-3820 Series._http._tcp.local",
+      "host": "EPSON9E8C92.local",
+      "referer": {
+        "address": "192.168.4.151",
+        "family": "IPv4",
+        "port": 5353,
+        "size": 162
+      },
+      "port": 80,
+      "type": "http",
+      "protocol": "tcp",
+      "scanMethod": "subnet_scan",
+      "openPorts": [
+        {
+          "port": 80,
+          "service": "HTTP"
+        },
+        {
+          "port": 443,
+          "service": "HTTPS"
+        }
+      ],
+      "hostname": null,
+      "mac": "68:55:d4:9e:8c:92",
+      "vendor": "Epson"
+    },
+    "firstSeen": "2025-12-31T06:29:36.970Z",
+    "mac": "68:55:d4:9e:8c:92",
+    "hostname": null,
+    "vendor": "Epson",
+    "openPorts": [
+      {
+        "port": 80,
+        "service": "HTTP"
+      },
+      {
+        "port": 443,
+        "service": "HTTPS"
+      }
+    ],
+    "confidence": 98
+  },
+  {
+    "id": "MTkyLjE2OC40LjUz",
+    "type": "sonos",
+    "name": "Linux UPnP/1.0 Sonos/57.22-71190 (ZPS9)",
+    "ip": "192.168.4.53",
+    "port": 49827,
+    "status": "online",
+    "lastSeen": "2025-12-31T07:12:39.338Z",
+    "metadata": {
+      "CACHE-CONTROL": "max-age = 1800",
+      "EXT": "",
+      "LOCATION": "http://192.168.4.53:1400/xml/device_description.xml",
+      "SERVER": "Linux UPnP/1.0 Sonos/57.22-71190 (ZPS9)",
+      "ST": "urn:schemas-upnp-org:service:VirtualLineIn:1",
+      "USN": "uuid:RINCON_000E58B33F2E01400_MR::urn:schemas-upnp-org:service:VirtualLineIn:1",
+      "X-RINCON-HOUSEHOLD": "Sonos_MDFO9f3A4q0cn6svCjZKnaznNg",
+      "X-RINCON-BOOTSEQ": "87",
+      "X-RINCON-PROXY": "RINCON_000E58B33F2E01400",
+      "X-RINCON-WIFIMODE": "1",
+      "X-RINCON-VARIANT": "0",
+      "HOUSEHOLD.SMARTSPEAKER.AUDIO": "Sonos_MDFO9f3A4q0cn6svCjZKnaznNg.K_fOibZIfDr-6LO0aruU",
+      "scanMethod": "subnet_scan",
+      "openPorts": [
+        {
+          "port": 1400,
+          "service": "Sonos"
+        }
+      ],
+      "hostname": null,
+      "mac": "00:0e:58:b3:3f:2e",
+      "vendor": "Sonos"
+    },
+    "firstSeen": "2025-12-31T06:29:36.970Z",
+    "mac": "00:0e:58:b3:3f:2e",
+    "hostname": null,
+    "vendor": "Sonos",
+    "openPorts": [
+      {
+        "port": 1400,
+        "service": "Sonos"
+      }
+    ],
+    "confidence": 95
+  },
+  {
+    "id": "MTkyLjE2OC40LjQ3",
+    "type": "sonos",
+    "name": "Linux UPnP/1.0 Sonos/57.22-71190 (ZP120)",
+    "ip": "192.168.4.47",
+    "port": 34697,
+    "status": "online",
+    "lastSeen": "2025-12-31T07:12:39.338Z",
+    "metadata": {
+      "CACHE-CONTROL": "max-age = 1800",
+      "EXT": "",
+      "LOCATION": "http://192.168.4.47:1400/xml/device_description.xml",
+      "SERVER": "Linux UPnP/1.0 Sonos/57.22-71190 (ZP120)",
+      "ST": "urn:schemas-upnp-org:service:VirtualLineIn:1",
+      "USN": "uuid:RINCON_000E58D6CA4C01400_MR::urn:schemas-upnp-org:service:VirtualLineIn:1",
+      "X-RINCON-HOUSEHOLD": "Sonos_MDFO9f3A4q0cn6svCjZKnaznNg",
+      "X-RINCON-BOOTSEQ": "188",
+      "X-RINCON-WIFIMODE": "1",
+      "X-RINCON-VARIANT": "0",
+      "HOUSEHOLD.SMARTSPEAKER.AUDIO": "Sonos_MDFO9f3A4q0cn6svCjZKnaznNg.K_fOibZIfDr-6LO0aruU",
+      "scanMethod": "subnet_scan",
+      "openPorts": [
+        {
+          "port": 1400,
+          "service": "Sonos"
+        }
+      ],
+      "hostname": null,
+      "mac": "00:0e:58:d6:ca:4c",
+      "vendor": "Sonos"
+    },
+    "firstSeen": "2025-12-31T06:29:36.970Z",
+    "mac": "00:0e:58:d6:ca:4c",
+    "hostname": null,
+    "vendor": "Sonos",
+    "openPorts": [
+      {
+        "port": 1400,
+        "service": "Sonos"
+      }
+    ],
+    "confidence": 95
+  },
+  {
+    "id": "MTkyLjE2OC40Ljk0",
+    "type": "sonos",
+    "name": "Linux UPnP/1.0 Sonos/57.22-71190 (ZPS17)",
+    "ip": "192.168.4.94",
+    "port": 60566,
+    "status": "online",
+    "lastSeen": "2025-12-31T07:12:39.338Z",
+    "metadata": {
+      "CACHE-CONTROL": "max-age = 1800",
+      "EXT": "",
+      "LOCATION": "http://192.168.4.94:1400/xml/device_description.xml",
+      "SERVER": "Linux UPnP/1.0 Sonos/57.22-71190 (ZPS17)",
+      "ST": "urn:schemas-upnp-org:service:VirtualLineIn:1",
+      "USN": "uuid:RINCON_48A6B8E2009C01400_MR::urn:schemas-upnp-org:service:VirtualLineIn:1",
+      "X-RINCON-HOUSEHOLD": "Sonos_MDFO9f3A4q0cn6svCjZKnaznNg",
+      "X-RINCON-BOOTSEQ": "92",
+      "X-RINCON-WIFIMODE": "1",
+      "X-RINCON-VARIANT": "2",
+      "HOUSEHOLD.SMARTSPEAKER.AUDIO": "Sonos_MDFO9f3A4q0cn6svCjZKnaznNg.K_fOibZIfDr-6LO0aruU",
+      "scanMethod": "subnet_scan",
+      "openPorts": [
+        {
+          "port": 1400,
+          "service": "Sonos"
+        },
+        {
+          "port": 7000,
+          "service": "AirPlay"
+        }
+      ],
+      "hostname": null,
+      "mac": "48:a6:b8:e2:00:9c",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T06:29:36.970Z",
+    "mac": "48:a6:b8:e2:00:9c",
+    "hostname": null,
+    "vendor": "Unknown",
+    "openPorts": [
+      {
+        "port": 1400,
+        "service": "Sonos"
+      },
+      {
+        "port": 7000,
+        "service": "AirPlay"
+      }
+    ],
+    "confidence": 95
+  },
+  {
+    "id": "MTkyLjE2OC40LjExMA",
+    "type": "sonos",
+    "name": "Linux UPnP/1.0 Sonos/57.22-71190 (ZP120)",
+    "ip": "192.168.4.110",
+    "port": 34341,
+    "status": "online",
+    "lastSeen": "2025-12-31T07:12:39.338Z",
+    "metadata": {
+      "CACHE-CONTROL": "max-age = 1800",
+      "EXT": "",
+      "LOCATION": "http://192.168.4.110:1400/xml/device_description.xml",
+      "SERVER": "Linux UPnP/1.0 Sonos/57.22-71190 (ZP120)",
+      "ST": "urn:schemas-upnp-org:service:VirtualLineIn:1",
+      "USN": "uuid:RINCON_000E58DA9F2E01400_MR::urn:schemas-upnp-org:service:VirtualLineIn:1",
+      "X-RINCON-HOUSEHOLD": "Sonos_MDFO9f3A4q0cn6svCjZKnaznNg",
+      "X-RINCON-BOOTSEQ": "174",
+      "X-RINCON-WIFIMODE": "1",
+      "X-RINCON-VARIANT": "0",
+      "HOUSEHOLD.SMARTSPEAKER.AUDIO": "Sonos_MDFO9f3A4q0cn6svCjZKnaznNg.K_fOibZIfDr-6LO0aruU",
+      "scanMethod": "subnet_scan",
+      "openPorts": [
+        {
+          "port": 1400,
+          "service": "Sonos"
+        }
+      ],
+      "hostname": null,
+      "mac": "00:0e:58:da:9f:2e",
+      "vendor": "Sonos"
+    },
+    "firstSeen": "2025-12-31T06:29:36.970Z",
+    "mac": "00:0e:58:da:9f:2e",
+    "hostname": null,
+    "vendor": "Sonos",
+    "openPorts": [
+      {
+        "port": 1400,
+        "service": "Sonos"
+      }
+    ],
+    "confidence": 95
+  },
+  {
+    "id": "MTkyLjE2OC40LjUz",
+    "type": "sonos",
+    "name": "Linux UPnP/1.0 Sonos/57.22-71190 (ZPS9)",
+    "ip": "192.168.4.53",
+    "port": 36089,
+    "status": "online",
+    "lastSeen": "2025-12-31T07:10:33.809Z",
+    "metadata": {
+      "CACHE-CONTROL": "max-age = 1800",
+      "EXT": "",
+      "LOCATION": "http://192.168.4.53:1400/xml/device_description.xml",
+      "SERVER": "Linux UPnP/1.0 Sonos/57.22-71190 (ZPS9)",
+      "ST": "urn:schemas-upnp-org:service:VirtualLineIn:1",
+      "USN": "uuid:RINCON_000E58B33F2E01400_MR::urn:schemas-upnp-org:service:VirtualLineIn:1",
+      "X-RINCON-HOUSEHOLD": "Sonos_MDFO9f3A4q0cn6svCjZKnaznNg",
+      "X-RINCON-BOOTSEQ": "87",
+      "X-RINCON-WIFIMODE": "1",
+      "X-RINCON-VARIANT": "0",
+      "HOUSEHOLD.SMARTSPEAKER.AUDIO": "Sonos_MDFO9f3A4q0cn6svCjZKnaznNg.K_fOibZIfDr-6LO0aruU"
+    },
+    "firstSeen": "2025-12-31T06:29:36.970Z"
+  },
+  {
+    "id": "MTkyLjE2OC40LjQy",
+    "type": "sonos",
+    "name": "Linux UPnP/1.0 Sonos/57.22-71190 (ZPS5)",
+    "ip": "192.168.4.42",
+    "port": 34566,
+    "status": "online",
+    "lastSeen": "2025-12-31T07:12:39.338Z",
+    "metadata": {
+      "CACHE-CONTROL": "max-age = 1800",
+      "EXT": "",
+      "LOCATION": "http://192.168.4.42:1400/xml/device_description.xml",
+      "SERVER": "Linux UPnP/1.0 Sonos/57.22-71190 (ZPS5)",
+      "ST": "urn:schemas-upnp-org:service:VirtualLineIn:1",
+      "USN": "uuid:RINCON_000E588D040A01400_MR::urn:schemas-upnp-org:service:VirtualLineIn:1",
+      "X-RINCON-HOUSEHOLD": "Sonos_MDFO9f3A4q0cn6svCjZKnaznNg",
+      "X-RINCON-BOOTSEQ": "142",
+      "X-RINCON-WIFIMODE": "1",
+      "X-RINCON-VARIANT": "0",
+      "HOUSEHOLD.SMARTSPEAKER.AUDIO": "Sonos_MDFO9f3A4q0cn6svCjZKnaznNg.K_fOibZIfDr-6LO0aruU",
+      "scanMethod": "subnet_scan",
+      "openPorts": [
+        {
+          "port": 1400,
+          "service": "Sonos"
+        }
+      ],
+      "hostname": null,
+      "mac": "00:0e:58:8d:04:0a",
+      "vendor": "Sonos"
+    },
+    "firstSeen": "2025-12-31T06:29:36.970Z",
+    "mac": "00:0e:58:8d:04:0a",
+    "hostname": null,
+    "vendor": "Sonos",
+    "openPorts": [
+      {
+        "port": 1400,
+        "service": "Sonos"
+      }
+    ],
+    "confidence": 95
+  },
+  {
+    "id": "6038e0447d25",
+    "type": "wemo-plug",
+    "name": "Unknown Device (30)",
+    "ipAddress": "192.168.4.30",
+    "ip": "192.168.4.30",
+    "mac": "60:38:e0:44:7d:25",
+    "model": "LightSwitch",
+    "manufacturer": "Belkin",
+    "serialNumber": "221703K1300F2D",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "firstSeen": "2025-12-31T06:47:20.767Z",
+    "status": "online",
+    "hostname": null,
+    "vendor": "Unknown",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "60:38:e0:44:7d:25",
+      "vendor": "Unknown"
+    }
+  },
+  {
+    "id": "NjAzOEUwNDQ5NDM4",
+    "type": "wemo-plug",
+    "name": "Driveway Lights",
+    "ipAddress": "192.168.4.34",
+    "ip": "192.168.4.34",
+    "mac": "6038E0449438",
+    "model": "LightSwitch",
+    "manufacturer": "Belkin",
+    "serialNumber": "221703K13014F2",
+    "lastSeen": "2025-12-31T07:12:39.337Z",
+    "firstSeen": "2025-12-31T06:47:20.767Z",
+    "status": "online",
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "60:38:e0:44:94:39",
+      "vendor": "Unknown"
+    },
+    "hostname": null,
+    "vendor": "Unknown",
+    "openPorts": [],
+    "confidence": 0
+  },
+  {
+    "id": "94b97ea5e530",
+    "name": "Unknown Device (20)",
+    "type": "unknown",
+    "ip": "192.168.4.20",
+    "hostname": null,
+    "mac": "94:b9:7e:a5:e5:30",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "94:b9:7e:a5:e5:30",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "02de263f2f08",
+    "name": "Unknown Device (21)",
+    "type": "unknown",
+    "ip": "192.168.4.21",
+    "hostname": null,
+    "mac": "02:de:26:3f:2f:08",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "02:de:26:3f:2f:08",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "42cd317a62d0",
+    "name": "Unknown Device (22)",
+    "type": "unknown",
+    "ip": "192.168.4.22",
+    "hostname": null,
+    "mac": "42:cd:31:7a:62:d0",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "42:cd:31:7a:62:d0",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "4c7525b4a448",
+    "name": "Unknown Device (23)",
+    "type": "unknown",
+    "ip": "192.168.4.23",
+    "hostname": null,
+    "mac": "4c:75:25:b4:a4:48",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "4c:75:25:b4:a4:48",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "ccd281691762",
+    "name": "Apple TV (25)",
+    "type": "appletv",
+    "ip": "192.168.4.25",
+    "hostname": null,
+    "mac": "cc:d2:81:69:17:62",
+    "vendor": "Apple",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [
+      {
+        "port": 5000,
+        "service": "UPnP"
+      },
+      {
+        "port": 7000,
+        "service": "AirPlay"
+      },
+      {
+        "port": 49152,
+        "service": "UPnP"
+      }
+    ],
+    "confidence": 95,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [
+        {
+          "port": 5000,
+          "service": "UPnP"
+        },
+        {
+          "port": 7000,
+          "service": "AirPlay"
+        },
+        {
+          "port": 49152,
+          "service": "UPnP"
+        }
+      ],
+      "hostname": null,
+      "mac": "cc:d2:81:69:17:62",
+      "vendor": "Apple"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "00ab480873ad",
+    "name": "Unknown Device (31)",
+    "type": "unknown",
+    "ip": "192.168.4.31",
+    "hostname": null,
+    "mac": "00:ab:48:08:73:ad",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "00:ab:48:08:73:ad",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "50de0689908f",
+    "name": "Apple TV (33)",
+    "type": "appletv",
+    "ip": "192.168.4.33",
+    "hostname": null,
+    "mac": "50:de:06:89:90:8f",
+    "vendor": "Apple",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [
+      {
+        "port": 5000,
+        "service": "UPnP"
+      },
+      {
+        "port": 7000,
+        "service": "AirPlay"
+      },
+      {
+        "port": 49152,
+        "service": "UPnP"
+      }
+    ],
+    "confidence": 95,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [
+        {
+          "port": 5000,
+          "service": "UPnP"
+        },
+        {
+          "port": 7000,
+          "service": "AirPlay"
+        },
+        {
+          "port": 49152,
+          "service": "UPnP"
+        }
+      ],
+      "hostname": null,
+      "mac": "50:de:06:89:90:8f",
+      "vendor": "Apple"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "441793ff9fb8",
+    "name": "Unknown Device (37)",
+    "type": "unknown",
+    "ip": "192.168.4.37",
+    "hostname": null,
+    "mac": "44:17:93:ff:9f:b8",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "44:17:93:ff:9f:b8",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "7c2c672e426c",
+    "name": "Unknown Device (38)",
+    "type": "unknown",
+    "ip": "192.168.4.38",
+    "hostname": null,
+    "mac": "7c:2c:67:2e:42:6c",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "7c:2c:67:2e:42:6c",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "18b4306ac48e",
+    "name": "Unknown Device (39)",
+    "type": "unknown",
+    "ip": "192.168.4.39",
+    "hostname": null,
+    "mac": "18:b4:30:6a:c4:8e",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "18:b4:30:6a:c4:8e",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "7c2c672e548c",
+    "name": "Unknown Device (40)",
+    "type": "unknown",
+    "ip": "192.168.4.40",
+    "hostname": null,
+    "mac": "7c:2c:67:2e:54:8c",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "7c:2c:67:2e:54:8c",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "7c2c672f6f90",
+    "name": "Unknown Device (41)",
+    "type": "unknown",
+    "ip": "192.168.4.41",
+    "hostname": null,
+    "mac": "7c:2c:67:2f:6f:90",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "7c:2c:67:2f:6f:90",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "7c2c672ec7a0",
+    "name": "Unknown Device (43)",
+    "type": "unknown",
+    "ip": "192.168.4.43",
+    "hostname": null,
+    "mac": "7c:2c:67:2e:c7:a0",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "7c:2c:67:2e:c7:a0",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "d828c99959dd",
+    "name": "Unknown Device (44)",
+    "type": "unknown",
+    "ip": "192.168.4.44",
+    "hostname": null,
+    "mac": "d8:28:c9:99:59:dd",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "d8:28:c9:99:59:dd",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "7c2c6730432c",
+    "name": "Unknown Device (45)",
+    "type": "unknown",
+    "ip": "192.168.4.45",
+    "hostname": null,
+    "mac": "7c:2c:67:30:43:2c",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "7c:2c:67:30:43:2c",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "08849d333ee2",
+    "name": "Unknown Device (51)",
+    "type": "unknown",
+    "ip": "192.168.4.51",
+    "hostname": null,
+    "mac": "08:84:9d:33:3e:e2",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "08:84:9d:33:3e:e2",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "18b4301491d0",
+    "name": "Unknown Device (54)",
+    "type": "unknown",
+    "ip": "192.168.4.54",
+    "hostname": null,
+    "mac": "18:b4:30:14:91:d0",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "18:b4:30:14:91:d0",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "18b43015a282",
+    "name": "Unknown Device (55)",
+    "type": "unknown",
+    "ip": "192.168.4.55",
+    "hostname": null,
+    "mac": "18:b4:30:15:a2:82",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "18:b4:30:15:a2:82",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "44bb3b5730d9",
+    "name": "Unknown Device (56)",
+    "type": "unknown",
+    "ip": "192.168.4.56",
+    "hostname": null,
+    "mac": "44:bb:3b:57:30:d9",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "44:bb:3b:57:30:d9",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "6416669fab94",
+    "name": "Unknown Device (60)",
+    "type": "unknown",
+    "ip": "192.168.4.60",
+    "hostname": null,
+    "mac": "64:16:66:9f:ab:94",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "64:16:66:9f:ab:94",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "1890886c2db2",
+    "name": "Eero Router (64)",
+    "type": "eero",
+    "ip": "192.168.4.64",
+    "hostname": null,
+    "mac": "18:90:88:6c:2d:b2",
+    "vendor": "eero (Amazon)",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 98,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "18:90:88:6c:2d:b2",
+      "vendor": "eero (Amazon)"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "189088662272",
+    "name": "Eero Router (78)",
+    "type": "eero",
+    "ip": "192.168.4.78",
+    "hostname": null,
+    "mac": "18:90:88:66:22:72",
+    "vendor": "eero (Amazon)",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 98,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "18:90:88:66:22:72",
+      "vendor": "eero (Amazon)"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "d8478f81a88f",
+    "name": "Unknown Device (86)",
+    "type": "unknown",
+    "ip": "192.168.4.86",
+    "hostname": null,
+    "mac": "d8:47:8f:81:a8:8f",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "d8:47:8f:81:a8:8f",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "a8934accdf23",
+    "name": "Unknown Device (90)",
+    "type": "unknown",
+    "ip": "192.168.4.90",
+    "hostname": null,
+    "mac": "a8:93:4a:cc:df:23",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "a8:93:4a:cc:df:23",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "22cecf302510",
+    "name": "Unknown Device (111)",
+    "type": "unknown",
+    "ip": "192.168.4.111",
+    "hostname": null,
+    "mac": "22:ce:cf:30:25:10",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "22:ce:cf:30:25:10",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "4cfcaa357293",
+    "name": "Unknown Device (114)",
+    "type": "unknown",
+    "ip": "192.168.4.114",
+    "hostname": null,
+    "mac": "4c:fc:aa:35:72:93",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "4c:fc:aa:35:72:93",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "606bffb2a54f",
+    "name": "Unknown Device (115)",
+    "type": "unknown",
+    "ip": "192.168.4.115",
+    "hostname": null,
+    "mac": "60:6b:ff:b2:a5:4f",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [],
+      "hostname": null,
+      "mac": "60:6b:ff:b2:a5:4f",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "9c6b00a4c7a4",
+    "name": "Unknown Device (120)",
+    "type": "unknown",
+    "ip": "192.168.4.120",
+    "hostname": null,
+    "mac": "9c:6b:00:a4:c7:a4",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [
+      {
+        "port": 22,
+        "service": "SSH"
+      }
+    ],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [
+        {
+          "port": 22,
+          "service": "SSH"
+        }
+      ],
+      "hostname": null,
+      "mac": "9c:6b:00:a4:c7:a4",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "MTkyLjE2OC40LjE0OQ",
+    "name": "IP Camera (149)",
+    "type": "camera",
+    "ip": "192.168.4.149",
+    "hostname": null,
+    "mac": null,
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [
+      {
+        "port": 554,
+        "service": "RTSP"
+      },
+      {
+        "port": 5000,
+        "service": "UPnP"
+      },
+      {
+        "port": 8008,
+        "service": "Chromecast"
+      }
+    ],
+    "confidence": 20,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [
+        {
+          "port": 554,
+          "service": "RTSP"
+        },
+        {
+          "port": 5000,
+          "service": "UPnP"
+        },
+        {
+          "port": 8008,
+          "service": "Chromecast"
+        }
+      ],
+      "hostname": null,
+      "mac": null,
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "dca632d48259",
+    "name": "Unknown Device (150)",
+    "type": "unknown",
+    "ip": "192.168.4.150",
+    "hostname": null,
+    "mac": "dc:a6:32:d4:82:59",
+    "vendor": "Unknown",
+    "status": "online",
+    "lastSeen": "2025-12-31T07:11:14.721Z",
+    "openPorts": [
+      {
+        "port": 22,
+        "service": "SSH"
+      }
+    ],
+    "confidence": 0,
+    "metadata": {
+      "scanMethod": "subnet_scan",
+      "openPorts": [
+        {
+          "port": 22,
+          "service": "SSH"
+        }
+      ],
+      "hostname": null,
+      "mac": "dc:a6:32:d4:82:59",
+      "vendor": "Unknown"
+    },
+    "firstSeen": "2025-12-31T07:11:14.721Z"
+  },
+  {
+    "id": "MTkyLjE2OC40LjM2",
+    "type": "sonos",
+    "name": "Linux UPnP/1.0 Sonos/57.22-71190 (ANVIL)",
+    "ip": "192.168.4.36",
+    "port": 43084,
+    "status": "online",
+    "lastSeen": "2025-12-31T07:12:39.338Z",
+    "metadata": {
+      "CACHE-CONTROL": "max-age = 1800",
+      "EXT": "",
+      "LOCATION": "http://192.168.4.36:1400/xml/device_description.xml",
+      "SERVER": "Linux UPnP/1.0 Sonos/57.22-71190 (ANVIL)",
+      "ST": "urn:schemas-upnp-org:service:RenderingControl:1",
+      "USN": "uuid:RINCON_000E58999B5801400_MR::urn:schemas-upnp-org:service:RenderingControl:1",
+      "X-RINCON-HOUSEHOLD": "Sonos_MDFO9f3A4q0cn6svCjZKnaznNg",
+      "X-RINCON-BOOTSEQ": "136",
+      "X-RINCON-PROXY": "RINCON_000E58B33F2E01400",
+      "X-RINCON-WIFIMODE": "0",
+      "X-RINCON-VARIANT": "0",
+      "HOUSEHOLD.SMARTSPEAKER.AUDIO": "Sonos_MDFO9f3A4q0cn6svCjZKnaznNg.K_fOibZIfDr-6LO0aruU"
+    },
+    "firstSeen": "2025-12-31T07:12:39.338Z"
+  }
+]
