@@ -9,16 +9,25 @@ import {
   Grid,
   Switch,
   FormControlLabel,
+  CircularProgress,
+  Paper,
+  Alert
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import ApiIcon from '@mui/icons-material/Api';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 
 const RingPage = () => {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
+  
+  // API Test state
+  const [apiTestResult, setApiTestResult] = useState(null);
+  const [apiTestLoading, setApiTestLoading] = useState(false);
+  const [apiTestTimestamp, setApiTestTimestamp] = useState(null);
 
   useEffect(() => {
     fetchDevices();
@@ -33,6 +42,19 @@ const RingPage = () => {
       console.error('Error fetching Ring devices:', error);
     }
     setLoading(false);
+  };
+
+  const handleTestApi = async () => {
+    setApiTestLoading(true);
+    try {
+      const response = await axios.get('/api/ring/devices');
+      setApiTestResult(response.data);
+      setApiTestTimestamp(new Date().toLocaleString());
+    } catch (err) {
+      setApiTestResult({ error: err.message || 'API request failed' });
+      setApiTestTimestamp(new Date().toLocaleString());
+    }
+    setApiTestLoading(false);
   };
 
   const toggleMotionDetection = async (deviceId, enabled) => {
@@ -154,6 +176,51 @@ const RingPage = () => {
             ))}
           </Grid>
         )}
+
+        {/* API Test Section */}
+        <Paper sx={{ mt: 4, p: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ApiIcon /> API Response
+            </Typography>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleTestApi}
+              disabled={apiTestLoading}
+              sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+            >
+              {apiTestLoading ? <CircularProgress size={16} color="inherit" /> : 'Test API'}
+            </Button>
+          </Box>
+          {apiTestTimestamp && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+              Last tested: {apiTestTimestamp}
+            </Typography>
+          )}
+          {apiTestResult ? (
+            <Box sx={{ bgcolor: 'rgba(0,0,0,0.2)', p: 2, borderRadius: 1, maxHeight: 200, overflow: 'auto' }}>
+              {apiTestResult.error ? (
+                <Alert severity="error">{apiTestResult.error}</Alert>
+              ) : (
+                <>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>Devices Found:</strong> {Array.isArray(apiTestResult) ? apiTestResult.length : 0}
+                  </Typography>
+                  <pre style={{ margin: 0, fontSize: '0.7rem', whiteSpace: 'pre-wrap' }}>
+                    {JSON.stringify(apiTestResult, null, 2)}
+                  </pre>
+                </>
+              )}
+            </Box>
+          ) : (
+            <Box sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(0,0,0,0.1)', borderRadius: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Click "Test API" to fetch Ring device data
+              </Typography>
+            </Box>
+          )}
+        </Paper>
       </motion.div>
     </Container>
   );

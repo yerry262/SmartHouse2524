@@ -8,12 +8,16 @@ import {
   Button,
   Grid,
   IconButton,
+  CircularProgress,
+  Paper,
+  Alert
 } from '@mui/material';
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeMuteIcon from '@mui/icons-material/VolumeMute';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import ApiIcon from '@mui/icons-material/Api';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 
@@ -21,18 +25,40 @@ const SamsungPage = () => {
   const [devices, setDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [tvStatus, setTvStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
+  
+  // API Test state
+  const [apiTestResult, setApiTestResult] = useState(null);
+  const [apiTestLoading, setApiTestLoading] = useState(false);
+  const [apiTestTimestamp, setApiTestTimestamp] = useState(null);
 
   useEffect(() => {
     discoverDevices();
   }, []);
 
   const discoverDevices = async () => {
+    setLoading(true);
     try {
       const response = await axios.get('/api/samsung/discover');
       setDevices(response.data.tvs || []);
     } catch (error) {
       console.error('Error discovering Samsung TVs:', error);
     }
+    setLoading(false);
+  };
+
+  const handleTestApi = async () => {
+    if (!selectedDevice) return;
+    setApiTestLoading(true);
+    try {
+      const response = await axios.get(`/api/samsung/${selectedDevice}/status`);
+      setApiTestResult(response.data);
+      setApiTestTimestamp(new Date().toLocaleString());
+    } catch (err) {
+      setApiTestResult({ error: err.message || 'API request failed', status: err.response?.status });
+      setApiTestTimestamp(new Date().toLocaleString());
+    }
+    setApiTestLoading(false);
   };
 
   const getTvStatus = async (ip) => {
@@ -87,8 +113,9 @@ const SamsungPage = () => {
           </div>
           <Button
             variant="contained"
-            startIcon={<RefreshIcon />}
+            startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <RefreshIcon />}
             onClick={discoverDevices}
+            disabled={loading}
           >
             Discover
           </Button>
@@ -198,6 +225,53 @@ const SamsungPage = () => {
                         </Grid>
                       ))}
                     </Grid>
+
+                    {/* API Test Section */}
+                    <Box sx={{ mt: 4, pt: 3, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <ApiIcon /> API Response
+                        </Typography>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          onClick={handleTestApi}
+                          disabled={apiTestLoading}
+                          sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                        >
+                          {apiTestLoading ? <CircularProgress size={16} color="inherit" /> : 'Test API'}
+                        </Button>
+                      </Box>
+                      {apiTestTimestamp && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                          Last tested: {apiTestTimestamp}
+                        </Typography>
+                      )}
+                      {apiTestResult ? (
+                        <Paper sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.3)', maxHeight: 200, overflow: 'auto' }}>
+                          {apiTestResult.error ? (
+                            <Alert severity="error">{apiTestResult.error}</Alert>
+                          ) : (
+                            <>
+                              <Box sx={{ mb: 2 }}>
+                                <Typography variant="body2"><strong>Online:</strong> {apiTestResult.online ? 'Yes' : 'No'}</Typography>
+                                {apiTestResult.name && <Typography variant="body2"><strong>Name:</strong> {apiTestResult.name}</Typography>}
+                              </Box>
+                              <Typography variant="caption" color="text.secondary">Raw Response:</Typography>
+                              <pre style={{ margin: 0, fontSize: '0.7rem', whiteSpace: 'pre-wrap' }}>
+                                {JSON.stringify(apiTestResult, null, 2)}
+                              </pre>
+                            </>
+                          )}
+                        </Paper>
+                      ) : (
+                        <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(0,0,0,0.2)' }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Click "Test API" to fetch TV status
+                          </Typography>
+                        </Paper>
+                      )}
+                    </Box>
                   </>
                 )}
               </CardContent>

@@ -34,35 +34,52 @@ import { motion } from 'framer-motion';
 const Sidebar = ({ open, onClose, devices }) => {
   const navigate = useNavigate();
 
-  const menuItems = [
-    { title: 'Dashboard', icon: <DashboardIcon />, path: '/', color: '#667eea' },
-    { title: 'Philips Hue', icon: <LightbulbIcon />, path: '/hue', color: '#FFB300' },
-    { title: 'TP-Link Kasa', icon: <PowerIcon />, path: '/tplink', color: '#00BFA5' },
-    { title: 'Belkin WeMo', icon: <BoltIcon />, path: '/wemo', color: '#76b900' },
-    { title: 'LIFX Bulbs', icon: <LightbulbIcon />, path: '/lifx', color: '#4CAF50' },
-    { title: 'Nanoleaf', icon: <LightbulbIcon />, path: '/nanoleaf', color: '#16A085' },
-    { title: 'Wyze Devices', icon: <DevicesIcon />, path: '/wyze', color: '#00C9FF' },
-    { title: 'Amazon Alexa', icon: <RecordVoiceOverIcon />, path: '/alexa', color: '#FF9900' },
-    { title: 'Google Home', icon: <RecordVoiceOverIcon />, path: '/google-home', color: '#4285F4' },
-    { title: 'Sonos Speakers', icon: <SpeakerIcon />, path: '/sonos', color: '#00D1B2' },
-    { title: 'Apple TV', icon: <SmartDisplayIcon />, path: '/appletv', color: '#A3A3A3' },
-    { title: 'Samsung TVs', icon: <TvIcon />, path: '/samsung', color: '#1428A0' },
-    { title: 'LG TVs', icon: <TvIcon />, path: '/lg', color: '#A50034' },
-    { title: 'Ring Doorbell', icon: <DoorbellIcon />, path: '/ring', color: '#00B5E2' },
-    { title: 'Cameras', icon: <VideocamIcon />, path: '/cameras', color: '#FF6B6B' },
-    { title: 'Eero Network', icon: <RouterIcon />, path: '/eero', color: '#00B5AD' },
-    { title: 'Xiaomi Devices', icon: <CleaningServicesIcon />, path: '/miio', color: '#FF6900' },
-    { title: 'Aurora Solar', icon: <WbSunnyIcon />, path: '/aurora', color: '#FFB300' },
-    { title: 'Epson Printers', icon: <PrintIcon />, path: '/epson', color: '#003399' },
-    { title: 'Samsung Washer', icon: <LocalLaundryServiceIcon />, path: '/samsung-washer', color: '#1428A0' },
-    { title: 'GE Appliances', icon: <KitchenIcon />, path: '/ge-appliances', color: '#0066CC' },
-    { title: 'Samsung Appliances', icon: <KitchenIcon />, path: '/samsung-appliances', color: '#1428A0' },
-    { title: 'SmartThings Hub', icon: <DevicesIcon />, path: '/smartthings', color: '#00C851' },
+  // Menu items with deviceType for accurate matching
+  const baseMenuItems = [
+    { title: 'Dashboard', icon: <DashboardIcon />, path: '/', color: '#667eea', deviceType: null },
+    { title: 'Philips Hue', icon: <LightbulbIcon />, path: '/hue', color: '#FFB300', deviceType: 'hue' },
+    { title: 'TP-Link Kasa', icon: <PowerIcon />, path: '/tplink', color: '#00BFA5', deviceType: 'tplink' },
+    { title: 'Belkin WeMo', icon: <BoltIcon />, path: '/wemo', color: '#76b900', deviceType: 'wemo' },
+    { title: 'LIFX Bulbs', icon: <LightbulbIcon />, path: '/lifx', color: '#4CAF50', deviceType: 'lifx' },
+    { title: 'Nanoleaf', icon: <LightbulbIcon />, path: '/nanoleaf', color: '#16A085', deviceType: 'nanoleaf' },
+    { title: 'Wyze Devices', icon: <DevicesIcon />, path: '/wyze', color: '#00C9FF', deviceType: 'wyze' },
+    { title: 'Amazon Alexa', icon: <RecordVoiceOverIcon />, path: '/alexa', color: '#FF9900', deviceType: 'alexa' },
+    { title: 'Google Home', icon: <RecordVoiceOverIcon />, path: '/google-home', color: '#4285F4', deviceType: 'google' },
+    { title: 'Sonos Speakers', icon: <SpeakerIcon />, path: '/sonos', color: '#00D1B2', deviceType: 'sonos' },
+    { title: 'Apple TV', icon: <SmartDisplayIcon />, path: '/appletv', color: '#A3A3A3', deviceType: 'appletv' },
+    { title: 'Samsung TVs', icon: <TvIcon />, path: '/samsung', color: '#1428A0', deviceType: 'samsung-tv' },
+    { title: 'LG TVs', icon: <TvIcon />, path: '/lg', color: '#A50034', deviceType: 'lg' },
+    { title: 'Ring Doorbell', icon: <DoorbellIcon />, path: '/ring', color: '#00B5E2', deviceType: 'ring' },
+    { title: 'Cameras', icon: <VideocamIcon />, path: '/cameras', color: '#FF6B6B', deviceType: 'camera' },
+    { title: 'Eero Network', icon: <RouterIcon />, path: '/eero', color: '#00B5AD', deviceType: 'eero' },
+    { title: 'Xiaomi Devices', icon: <CleaningServicesIcon />, path: '/miio', color: '#FF6900', deviceType: 'miio' },
+    { title: 'Aurora Solar', icon: <WbSunnyIcon />, path: '/aurora', color: '#FFB300', deviceType: 'aurora' },
+    { title: 'Epson Printers', icon: <PrintIcon />, path: '/epson', color: '#003399', deviceType: 'epson' },
+    { title: 'Samsung Washer', icon: <LocalLaundryServiceIcon />, path: '/samsung-washer', color: '#1428A0', deviceType: 'samsung-washer' },
+    { title: 'GE Appliances', icon: <KitchenIcon />, path: '/ge-appliances', color: '#0066CC', deviceType: 'ge' },
+    { title: 'Samsung Appliances', icon: <KitchenIcon />, path: '/samsung-appliances', color: '#1428A0', deviceType: 'samsung-appliance' },
+    { title: 'SmartThings Hub', icon: <DevicesIcon />, path: '/smartthings', color: '#00C851', deviceType: 'smartthings' },
   ];
 
-  const getDeviceCount = (type) => {
-    return devices.filter(d => d.type.toLowerCase().includes(type.toLowerCase())).length;
+  const getDeviceCount = (deviceType) => {
+    if (!deviceType) return 0;
+    return devices.filter(d => d.type.toLowerCase().includes(deviceType.toLowerCase())).length;
   };
+
+  // Sort menu items: Dashboard first, then by device count descending
+  const menuItems = React.useMemo(() => {
+    const dashboard = baseMenuItems.find(item => item.path === '/');
+    const otherItems = baseMenuItems.filter(item => item.path !== '/');
+    
+    // Sort by device count (descending)
+    const sortedItems = otherItems.sort((a, b) => {
+      const countA = getDeviceCount(a.deviceType);
+      const countB = getDeviceCount(b.deviceType);
+      return countB - countA;
+    });
+    
+    return [dashboard, ...sortedItems];
+  }, [devices]);
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -116,9 +133,9 @@ const Sidebar = ({ open, onClose, devices }) => {
                       fontSize: '0.95rem',
                     }}
                   />
-                  {item.path !== '/' && (
+                  {item.deviceType && (
                     <Chip
-                      label={getDeviceCount(item.title.split(' ')[0])}
+                      label={getDeviceCount(item.deviceType)}
                       size="small"
                       sx={{
                         backgroundColor: item.color,

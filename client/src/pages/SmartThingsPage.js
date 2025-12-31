@@ -17,7 +17,9 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  TextField
+  TextField,
+  CircularProgress,
+  Paper
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -26,7 +28,8 @@ import {
   Thermostat as ThermostatIcon,
   Lock as LockIcon,
   Refresh as RefreshIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Api as ApiIcon
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import axios from 'axios';
@@ -43,6 +46,11 @@ const SmartThingsPage = () => {
     command: '',
     arguments: ''
   });
+  
+  // API Test state
+  const [apiTestResult, setApiTestResult] = useState(null);
+  const [apiTestLoading, setApiTestLoading] = useState(false);
+  const [apiTestTimestamp, setApiTestTimestamp] = useState(null);
 
   useEffect(() => {
     discoverDevices();
@@ -63,6 +71,19 @@ const SmartThingsPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTestApi = async () => {
+    setApiTestLoading(true);
+    try {
+      const response = await axios.get('/api/smartthings/discover');
+      setApiTestResult(response.data);
+      setApiTestTimestamp(new Date().toLocaleString());
+    } catch (err) {
+      setApiTestResult({ error: err.message || 'API request failed' });
+      setApiTestTimestamp(new Date().toLocaleString());
+    }
+    setApiTestLoading(false);
   };
 
   const getLocations = async () => {
@@ -254,6 +275,51 @@ const SmartThingsPage = () => {
             </Grid>
           ))}
         </Grid>
+
+        {/* API Test Section */}
+        <Paper sx={{ mt: 4, p: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ApiIcon /> API Response
+            </Typography>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleTestApi}
+              disabled={apiTestLoading}
+              sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+            >
+              {apiTestLoading ? <CircularProgress size={16} color="inherit" /> : 'Test API'}
+            </Button>
+          </Box>
+          {apiTestTimestamp && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+              Last tested: {apiTestTimestamp}
+            </Typography>
+          )}
+          {apiTestResult ? (
+            <Box sx={{ bgcolor: 'rgba(0,0,0,0.2)', p: 2, borderRadius: 1, maxHeight: 200, overflow: 'auto' }}>
+              {apiTestResult.error ? (
+                <Alert severity="error">{apiTestResult.error}</Alert>
+              ) : (
+                <>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>Devices Found:</strong> {apiTestResult.devices?.length || 0}
+                  </Typography>
+                  <pre style={{ margin: 0, fontSize: '0.7rem', whiteSpace: 'pre-wrap' }}>
+                    {JSON.stringify(apiTestResult, null, 2)}
+                  </pre>
+                </>
+              )}
+            </Box>
+          ) : (
+            <Box sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(0,0,0,0.1)', borderRadius: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Click "Test API" to fetch SmartThings device data
+              </Typography>
+            </Box>
+          )}
+        </Paper>
 
         {/* Command Dialog */}
         <Dialog 

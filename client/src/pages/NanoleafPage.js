@@ -27,6 +27,7 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   IconButton,
+  Paper
 } from '@mui/material';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -38,6 +39,7 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import ApiIcon from '@mui/icons-material/Api';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 
@@ -58,6 +60,11 @@ const NanoleafPage = () => {
 
   // Dialog states
   const [authDialog, setAuthDialog] = useState(false);
+  
+  // API Test state
+  const [apiTestResult, setApiTestResult] = useState(null);
+  const [apiTestLoading, setApiTestLoading] = useState(false);
+  const [apiTestTimestamp, setApiTestTimestamp] = useState(null);
   const [connectDialog, setConnectDialog] = useState(false);
   const [authToken, setAuthToken] = useState('');
   const [deviceToAuth, setDeviceToAuth] = useState(null);
@@ -96,6 +103,20 @@ const NanoleafPage = () => {
       console.error('Error discovering Nanoleaf devices:', err);
       setError('Failed to discover devices: ' + (err.response?.data?.message || err.message));
     }
+  };
+
+  const handleTestApi = async () => {
+    setApiTestLoading(true);
+    try {
+      const endpoint = selectedDevice ? `/api/nanoleaf/${selectedDevice.ip}/state` : '/api/nanoleaf/discover';
+      const response = await axios.get(endpoint);
+      setApiTestResult(response.data);
+      setApiTestTimestamp(new Date().toLocaleString());
+    } catch (err) {
+      setApiTestResult({ error: err.message || 'API request failed' });
+      setApiTestTimestamp(new Date().toLocaleString());
+    }
+    setApiTestLoading(false);
   };
 
   const loadDeviceState = async () => {
@@ -671,6 +692,46 @@ const NanoleafPage = () => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* API Test Section */}
+        <Paper sx={{ mt: 4, p: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ApiIcon /> API Response
+            </Typography>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleTestApi}
+              disabled={apiTestLoading}
+              sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+            >
+              {apiTestLoading ? <CircularProgress size={16} color="inherit" /> : 'Test API'}
+            </Button>
+          </Box>
+          {apiTestTimestamp && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+              Last tested: {apiTestTimestamp}
+            </Typography>
+          )}
+          {apiTestResult ? (
+            <Box sx={{ bgcolor: 'rgba(0,0,0,0.2)', p: 2, borderRadius: 1, maxHeight: 200, overflow: 'auto' }}>
+              {apiTestResult.error ? (
+                <Alert severity="error">{apiTestResult.error}</Alert>
+              ) : (
+                <pre style={{ margin: 0, fontSize: '0.7rem', whiteSpace: 'pre-wrap' }}>
+                  {JSON.stringify(apiTestResult, null, 2)}
+                </pre>
+              )}
+            </Box>
+          ) : (
+            <Box sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(0,0,0,0.1)', borderRadius: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Click "Test API" to fetch Nanoleaf {selectedDevice ? 'state' : 'discovery'} data
+              </Typography>
+            </Box>
+          )}
+        </Paper>
       </motion.div>
     </Container>
   );

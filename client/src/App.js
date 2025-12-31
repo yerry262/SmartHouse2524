@@ -74,7 +74,11 @@ function App() {
 
   useEffect(() => {
     // WebSocket connection for real-time updates
-    const ws = new WebSocket('ws://localhost:5000');
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsHost = window.location.hostname;
+    const wsPort = process.env.NODE_ENV === 'development' ? '5000' : window.location.port;
+    const wsUrl = `${wsProtocol}//${wsHost}:${wsPort}`;
+    const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {
       console.log('WebSocket connected');

@@ -21,9 +21,9 @@ const SubnetScanDialog = ({ open, onClose, onDevicesFound }) => {
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [foundCount, setFoundCount] = useState(0);
-  const [subnet, setSubnet] = useState('192.168.4');
-  const [startIP, setStartIP] = useState('0');
-  const [endIP, setEndIP] = useState('255');
+  const [subnet, setSubnet] = useState('192.168.1');
+  const [startIP, setStartIP] = useState('1');
+  const [endIP, setEndIP] = useState('254');
   const [results, setResults] = useState([]);
 
   const handleScan = async () => {
@@ -41,7 +41,11 @@ const SubnetScanDialog = ({ open, onClose, onDevicesFound }) => {
       });
 
       // Listen for WebSocket updates
-      const ws = new WebSocket('ws://localhost:5000');
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsHost = window.location.hostname;
+      const wsPort = process.env.NODE_ENV === 'development' ? '5000' : window.location.port;
+      const wsUrl = `${wsProtocol}//${wsHost}:${wsPort}`;
+      const ws = new WebSocket(wsUrl);
       
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
@@ -99,9 +103,9 @@ const SubnetScanDialog = ({ open, onClose, onDevicesFound }) => {
               fullWidth
               value={subnet}
               onChange={(e) => setSubnet(e.target.value)}
-              placeholder="192.168.4"
+              placeholder="192.168.1"
               disabled={scanning}
-              helperText="Example: 192.168.4"
+              helperText="Example: 192.168.1 or 10.0.0"
             />
           </Grid>
           <Grid item xs={6} md={3}>

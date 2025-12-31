@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Card,
@@ -18,7 +18,13 @@ import {
   ListItem,
   ListItemText,
   ListItemAvatar,
-  Paper
+  Paper,
+  Tabs,
+  Tab,
+  Switch,
+  FormControlLabel,
+  Divider,
+  Tooltip
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
@@ -31,6 +37,8 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import SpeakerIcon from '@mui/icons-material/Speaker';
 import QueueMusicIcon from '@mui/icons-material/QueueMusic';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import ApiIcon from '@mui/icons-material/Api';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 
@@ -42,18 +50,72 @@ const SonosPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [queue, setQueue] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+  const [tabValue, setTabValue] = useState(0);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [positionInfo, setPositionInfo] = useState(null);
+  const [progress, setProgress] = useState(0);
+  
+  // API Test state
+  const [apiTestResult, setApiTestResult] = useState(null);
+  const [apiTestLoading, setApiTestLoading] = useState(false);
+  const [apiTestTimestamp, setApiTestTimestamp] = useState(null);
 
   useEffect(() => {
     discoverDevices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const getDeviceStatus = useCallback(async () => {
+    if (!selectedDevice) return;
+    
+    try {
+      const [statusRes, posRes] = await Promise.all([
+        axios.get(`/api/sonos/${selectedDevice}/status`),
+        axios.get(`/api/sonos/${selectedDevice}/position`)
+      ]);
+      setDeviceStatus(statusRes.data);
+      setVolume(statusRes.data.volume);
+      setPositionInfo(posRes.data);
+      
+      // Calculate progress percentage
+      if (posRes.data.duration && posRes.data.position) {
+        const durationSecs = timeToSeconds(posRes.data.duration);
+        const positionSecs = timeToSeconds(posRes.data.position);
+        if (durationSecs > 0) {
+          setProgress((positionSecs / durationSecs) * 100);
+        }
+      }
+      setError(null);
+    } catch (error) {
+      console.error('Error getting device status:', error);
+      setError('Failed to get device status');
+    }
+  }, [selectedDevice]);
 
   useEffect(() => {
     if (selectedDevice) {
       getDeviceStatus();
-      const interval = setInterval(getDeviceStatus, 5000); // Update every 5 seconds
-      return () => clearInterval(interval);
+      getFavorites();
+      if (autoRefresh) {
+        const interval = setInterval(getDeviceStatus, 2000); // Update every 2 seconds for smoother progress
+        return () => clearInterval(interval);
+      }
     }
-  }, [selectedDevice]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDevice, autoRefresh, getDeviceStatus]);
+
+  // Convert time string (HH:MM:SS or MM:SS) to seconds
+  const timeToSeconds = (timeStr) => {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length === 3) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    } else if (parts.length === 2) {
+      return parts[0] * 60 + parts[1];
+    }
+    return 0;
+  };
 
   const discoverDevices = async () => {
     setLoading(true);
@@ -71,17 +133,23 @@ const SonosPage = () => {
     }
   };
 
-  const getDeviceStatus = async () => {
+  const getFavorites = async () => {
     if (!selectedDevice) return;
     
     try {
-      const response = await axios.get(`/api/sonos/${selectedDevice}/status`);
-      setDeviceStatus(response.data);
-      setVolume(response.data.volume);
-      setError(null);
+      const response = await axios.get(`/api/sonos/${selectedDevice}/favorites`);
+      setFavorites(response.data.favorites || []);
     } catch (error) {
-      console.error('Error getting device status:', error);
-      setError('Failed to get device status');
+      console.error('Error getting favorites:', error);
+    }
+  };
+
+  const playFavorite = async (favorite) => {
+    try {
+      await axios.post(`/api/sonos/${selectedDevice}/favorite/${encodeURIComponent(favorite.title)}`);
+      getDeviceStatus();
+    } catch (error) {
+      console.error('Error playing favorite:', error);
     }
   };
 
@@ -191,6 +259,20 @@ const SonosPage = () => {
     }
   };
 
+  const handleTestApi = async () => {
+    if (!selectedDevice) return;
+    setApiTestLoading(true);
+    try {
+      const response = await axios.get(`/api/sonos/${selectedDevice}/status`);
+      setApiTestResult(response.data);
+      setApiTestTimestamp(new Date().toLocaleString());
+    } catch (err) {
+      setApiTestResult({ error: err.message || 'API request failed', status: err.response?.status });
+      setApiTestTimestamp(new Date().toLocaleString());
+    }
+    setApiTestLoading(false);
+  };
+
   return (
     <Container maxWidth="lg">
       <motion.div
@@ -198,21 +280,33 @@ const SonosPage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4, flexWrap: 'wrap', gap: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <SpeakerIcon sx={{ fontSize: 40, mr: 2, color: '#00D1B2' }} />
-            <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
               Sonos Speakers ({devices.length})
             </Typography>
           </Box>
-          <Button 
-            variant="outlined" 
-            startIcon={<RefreshIcon />} 
-            onClick={discoverDevices}
-            disabled={loading}
-          >
-            Discover
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={autoRefresh}
+                  onChange={(e) => setAutoRefresh(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Auto-refresh"
+            />
+            <Button 
+              variant="outlined" 
+              startIcon={<RefreshIcon />} 
+              onClick={discoverDevices}
+              disabled={loading}
+            >
+              Discover
+            </Button>
+          </Box>
         </Box>
 
         {error && (
@@ -316,14 +410,30 @@ const SonosPage = () => {
                         </Box>
                       </Box>
 
-                      {/* Progress Bar (if available) */}
-                      {deviceStatus.track?.duration && deviceStatus.track?.position && (
+                      {/* Progress Bar */}
+                      <Box sx={{ mb: 3 }}>
                         <LinearProgress 
                           variant="determinate" 
-                          value={50} // You might need to calculate this based on position/duration
-                          sx={{ mb: 3 }}
+                          value={progress}
+                          sx={{ 
+                            height: 6, 
+                            borderRadius: 3,
+                            backgroundColor: 'rgba(255,255,255,0.1)',
+                            '& .MuiLinearProgress-bar': {
+                              borderRadius: 3,
+                              background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)'
+                            }
+                          }}
                         />
-                      )}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {positionInfo?.position || '0:00:00'}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {positionInfo?.duration || '0:00:00'}
+                          </Typography>
+                        </Box>
+                      </Box>
 
                       {/* Control Buttons */}
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
@@ -407,56 +517,194 @@ const SonosPage = () => {
                       <Typography variant="h6" gutterBottom>
                         📱 Device Info
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Name:</strong> {deviceStatus.device?.name || 'Unknown'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Model:</strong> {deviceStatus.device?.model || 'Unknown'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>IP:</strong> {deviceStatus.ip}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Software:</strong> {deviceStatus.device?.softwareVersion || 'Unknown'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Last Update:</strong> {new Date(deviceStatus.timestamp).toLocaleTimeString()}
-                      </Typography>
+                      <Divider sx={{ mb: 2 }} />
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography variant="body2" color="text.secondary">Name</Typography>
+                          <Typography variant="body2">{deviceStatus.device?.name || 'Unknown'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography variant="body2" color="text.secondary">Model</Typography>
+                          <Typography variant="body2">{deviceStatus.device?.model || 'Unknown'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography variant="body2" color="text.secondary">IP Address</Typography>
+                          <Typography variant="body2">{deviceStatus.ip}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography variant="body2" color="text.secondary">Serial Number</Typography>
+                          <Typography variant="body2">{deviceStatus.device?.serialNumber || 'Unknown'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography variant="body2" color="text.secondary">Software</Typography>
+                          <Typography variant="body2">{deviceStatus.device?.softwareVersion || 'Unknown'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography variant="body2" color="text.secondary">Last Update</Typography>
+                          <Typography variant="body2">{new Date(deviceStatus.timestamp).toLocaleTimeString()}</Typography>
+                        </Box>
+                      </Box>
                     </CardContent>
                   </Card>
                 </Grid>
 
-                {/* Queue Button */}
+                {/* Tabs for Queue and Favorites */}
                 <Grid item xs={12}>
                   <Card>
                     <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Typography variant="h6">🎵 Playback Queue</Typography>
-                        <Button 
-                          variant="outlined" 
-                          startIcon={<QueueMusicIcon />}
-                          onClick={getQueue}
-                        >
-                          Load Queue
-                        </Button>
-                      </Box>
+                      <Tabs 
+                        value={tabValue} 
+                        onChange={(e, v) => setTabValue(v)}
+                        sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+                      >
+                        <Tab icon={<QueueMusicIcon />} label="Queue" />
+                        <Tab icon={<FavoriteIcon />} label="Favorites" />
+                      </Tabs>
                       
-                      {queue.length > 0 && (
-                        <List sx={{ mt: 2 }}>
-                          {queue.slice(0, 5).map((track, index) => (
-                            <ListItem key={index} divider>
-                              <ListItemText
-                                primary={track.title || 'Unknown track'}
-                                secondary={`${track.artist || 'Unknown artist'} - ${track.album || 'Unknown album'}`}
-                              />
-                            </ListItem>
-                          ))}
-                          {queue.length > 5 && (
-                            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                              And {queue.length - 5} more tracks...
+                      {/* Queue Tab */}
+                      {tabValue === 0 && (
+                        <Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                            <Button 
+                              variant="outlined" 
+                              size="small"
+                              startIcon={<RefreshIcon />}
+                              onClick={getQueue}
+                            >
+                              Refresh Queue
+                            </Button>
+                          </Box>
+                          {queue.length > 0 ? (
+                            <List dense>
+                              {queue.slice(0, 10).map((track, index) => (
+                                <ListItem key={index} divider>
+                                  <ListItemAvatar>
+                                    <Avatar sx={{ bgcolor: 'primary.main' }}>
+                                      {index + 1}
+                                    </Avatar>
+                                  </ListItemAvatar>
+                                  <ListItemText
+                                    primary={track.title || 'Unknown track'}
+                                    secondary={`${track.artist || 'Unknown artist'} - ${track.album || 'Unknown album'}`}
+                                  />
+                                </ListItem>
+                              ))}
+                              {queue.length > 10 && (
+                                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'center' }}>
+                                  And {queue.length - 10} more tracks...
+                                </Typography>
+                              )}
+                            </List>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
+                              Click "Refresh Queue" to load the current queue
                             </Typography>
                           )}
-                        </List>
+                        </Box>
+                      )}
+                      
+                      {/* Favorites Tab */}
+                      {tabValue === 1 && (
+                        <Box>
+                          {favorites.length > 0 ? (
+                            <Grid container spacing={2}>
+                              {favorites.map((fav, index) => (
+                                <Grid item xs={12} sm={6} md={4} key={index}>
+                                  <Paper
+                                    sx={{ 
+                                      p: 2, 
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s',
+                                      '&:hover': { 
+                                        transform: 'scale(1.02)',
+                                        boxShadow: 4
+                                      }
+                                    }}
+                                    onClick={() => playFavorite(fav)}
+                                  >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                      <Avatar 
+                                        src={fav.albumArtURI || fav.albumArtUri} 
+                                        sx={{ width: 48, height: 48 }}
+                                      >
+                                        <FavoriteIcon />
+                                      </Avatar>
+                                      <Box sx={{ overflow: 'hidden' }}>
+                                        <Tooltip title={fav.title}>
+                                          <Typography variant="body2" noWrap sx={{ fontWeight: 'bold' }}>
+                                            {fav.title}
+                                          </Typography>
+                                        </Tooltip>
+                                        <Typography variant="caption" color="text.secondary" noWrap>
+                                          {fav.description || 'Sonos Favorite'}
+                                        </Typography>
+                                      </Box>
+                                    </Box>
+                                  </Paper>
+                                </Grid>
+                              ))}
+                            </Grid>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
+                              No favorites found. Add favorites in your Sonos app.
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+                      
+                      {/* API Test Section */}
+                      {tabValue === 0 && (
+                        <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                            <Typography variant="subtitle1\" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <ApiIcon /> API Response
+                            </Typography>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              onClick={handleTestApi}
+                              disabled={apiTestLoading}
+                              sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                            >
+                              {apiTestLoading ? <CircularProgress size={16} color="inherit" /> : 'Test API'}
+                            </Button>
+                          </Box>
+                          {apiTestTimestamp && (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                              Last tested: {apiTestTimestamp}
+                            </Typography>
+                          )}
+                          {apiTestResult ? (
+                            <Paper sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.3)', maxHeight: 200, overflow: 'auto' }}>
+                              {apiTestResult.error ? (
+                                <Alert severity="error">{apiTestResult.error}</Alert>
+                              ) : (
+                                <>
+                                  <Box sx={{ mb: 2 }}>
+                                    {apiTestResult.device && (
+                                      <>
+                                        <Typography variant="body2"><strong>Room:</strong> {apiTestResult.device.name}</Typography>
+                                        <Typography variant="body2"><strong>Model:</strong> {apiTestResult.device.model}</Typography>
+                                      </>
+                                    )}
+                                    <Typography variant="body2"><strong>Playing:</strong> {apiTestResult.playing ? 'Yes' : 'No'}</Typography>
+                                    <Typography variant="body2"><strong>Volume:</strong> {apiTestResult.volume}%</Typography>
+                                  </Box>
+                                  <Typography variant="caption" color="text.secondary">Raw Response:</Typography>
+                                  <pre style={{ margin: 0, fontSize: '0.65rem', whiteSpace: 'pre-wrap' }}>
+                                    {JSON.stringify(apiTestResult, null, 2)}
+                                  </pre>
+                                </>
+                              )}
+                            </Paper>
+                          ) : (
+                            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(0,0,0,0.2)' }}>
+                              <Typography variant="body2" color="text.secondary">
+                                Click "Test API" to fetch speaker status
+                              </Typography>
+                            </Paper>
+                          )}
+                        </Box>
                       )}
                     </CardContent>
                   </Card>

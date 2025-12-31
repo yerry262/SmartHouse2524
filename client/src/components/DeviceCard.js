@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -21,8 +21,38 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const DeviceCard = ({ device, onRefresh }) => {
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [friendlyName, setFriendlyName] = useState(null);
+  const [deviceModel, setDeviceModel] = useState(null);
   const navigate = useNavigate();
+
+  // Fetch friendly names for devices that support it
+  useEffect(() => {
+    const fetchFriendlyName = async () => {
+      const ip = device.ip || device.ipAddress;
+      if (!ip) return;
+
+      try {
+        if (device.type === 'appletv') {
+          const res = await axios.get(`/api/appletv/${ip}/status`, { timeout: 15000 });
+          if (res.data?.device?.name) {
+            setFriendlyName(res.data.device.name);
+            setDeviceModel(res.data.device.model);
+          }
+        } else if (device.type === 'sonos' || (device.metadata?.SERVER && device.metadata.SERVER.includes('Sonos'))) {
+          const res = await axios.get(`/api/sonos/${ip}/status`, { timeout: 10000 });
+          if (res.data?.device?.name) {
+            setFriendlyName(res.data.device.name);
+            setDeviceModel(res.data.device.model);
+          }
+        }
+      } catch (err) {
+        // Silently fail - just use original name
+      }
+    };
+
+    fetchFriendlyName();
+  }, [device]);
 
   const handleMenuOpen = (event) => {
     event.stopPropagation();
@@ -92,8 +122,14 @@ const DeviceCard = ({ device, onRefresh }) => {
           </Box>
 
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, noWrap: true }}>
-            {device.name}
+            {friendlyName || device.name}
           </Typography>
+          
+          {deviceModel && (
+            <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+              {deviceModel}
+            </Typography>
+          )}
 
           <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
             IP: {device.ip}

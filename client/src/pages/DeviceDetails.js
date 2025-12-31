@@ -13,7 +13,12 @@ import {
   Switch,
   FormControlLabel,
   Paper,
-  Alert
+  Alert,
+  IconButton,
+  Slider,
+  Avatar,
+  LinearProgress,
+  CircularProgress
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
@@ -23,6 +28,13 @@ import TvIcon from '@mui/icons-material/Tv';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PauseIcon from '@mui/icons-material/Pause';
+import StopIcon from '@mui/icons-material/Stop';
+import SkipNextIcon from '@mui/icons-material/SkipNext';
+import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
+import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import SpeakerIcon from '@mui/icons-material/Speaker';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 
@@ -33,6 +45,32 @@ const DeviceDetails = () => {
   const [loading, setLoading] = useState(true);
   const [powerState, setPowerState] = useState(null);
   const [controlError, setControlError] = useState(null);
+  
+  // Sonos state
+  const [sonosStatus, setSonosStatus] = useState(null);
+  const [sonosVolume, setSonosVolume] = useState(50);
+  const [sonosLoading, setSonosLoading] = useState(false);
+  const [sonosProgress, setSonosProgress] = useState(0);
+
+  // Apple TV state
+  const [appletvStatus, setAppletvStatus] = useState(null);
+
+  // API Test state
+  const [apiTestResult, setApiTestResult] = useState(null);
+  const [apiTestLoading, setApiTestLoading] = useState(false);
+  const [apiTestTimestamp, setApiTestTimestamp] = useState(null);
+
+  // Helper to convert time string to seconds (defined before callbacks that use it)
+  const timeToSeconds = (timeStr) => {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length === 3) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    } else if (parts.length === 2) {
+      return parts[0] * 60 + parts[1];
+    }
+    return 0;
+  };
 
   const fetchDeviceDetails = useCallback(async () => {
     try {
@@ -60,6 +98,41 @@ const DeviceDetails = () => {
       } else if (device.type === 'samsung-tv') {
         const res = await axios.get(`/api/samsung/${ip}/status`);
         setPowerState(res.data.online);
+      } else if (device.type === 'sonos' || (device.metadata?.SERVER && device.metadata.SERVER.includes('Sonos'))) {
+        // Fetch Sonos status
+        setSonosLoading(true);
+        try {
+          const [statusRes, posRes] = await Promise.all([
+            axios.get(`/api/sonos/${ip}/status`),
+            axios.get(`/api/sonos/${ip}/position`)
+          ]);
+          setSonosStatus(statusRes.data);
+          setSonosVolume(statusRes.data.volume || 50);
+          
+          // Calculate progress - duration and position are in seconds
+          if (posRes.data.duration && posRes.data.position) {
+            const durationSecs = typeof posRes.data.duration === 'string' 
+              ? timeToSeconds(posRes.data.duration) 
+              : posRes.data.duration;
+            const positionSecs = typeof posRes.data.position === 'string' 
+              ? timeToSeconds(posRes.data.position) 
+              : posRes.data.position;
+            if (durationSecs > 0) {
+              setSonosProgress((positionSecs / durationSecs) * 100);
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching Sonos status:', err);
+        }
+        setSonosLoading(false);
+      } else if (device.type === 'appletv') {
+        // Fetch Apple TV status
+        try {
+          const res = await axios.get(`/api/appletv/${ip}/status`);
+          setAppletvStatus(res.data);
+        } catch (err) {
+          console.error('Error fetching Apple TV status:', err);
+        }
       }
     } catch (err) {
       console.error("Error fetching state", err);
@@ -73,6 +146,13 @@ const DeviceDetails = () => {
   useEffect(() => {
     if (device) {
       fetchDeviceState();
+      
+      // Auto-refresh for Sonos devices
+      const isSonosDevice = device.type === 'sonos' || (device.metadata?.SERVER && device.metadata.SERVER.includes('Sonos'));
+      if (isSonosDevice) {
+        const interval = setInterval(fetchDeviceState, 3000);
+        return () => clearInterval(interval);
+      }
     }
   }, [fetchDeviceState, device]);
 
@@ -119,6 +199,129 @@ const DeviceDetails = () => {
     }
   };
 
+  // Sonos control handlers
+  const handleSonosPlay = async () => {
+    const ip = device.ip || device.ipAddress;
+    try {
+      await axios.post(`/api/sonos/${ip}/play`);
+      fetchDeviceState();
+    } catch (err) {
+      setControlError('Failed to play');
+    }
+  };
+
+  const handleSonosPause = async () => {
+    const ip = device.ip || device.ipAddress;
+    try {
+      await axios.post(`/api/sonos/${ip}/pause`);
+      fetchDeviceState();
+    } catch (err) {
+      setControlError('Failed to pause');
+    }
+  };
+
+  const handleSonosStop = async () => {
+    const ip = device.ip || device.ipAddress;
+    try {
+      await axios.post(`/api/sonos/${ip}/stop`);
+      fetchDeviceState();
+    } catch (err) {
+      setControlError('Failed to stop');
+    }
+  };
+
+  const handleSonosNext = async () => {
+    const ip = device.ip || device.ipAddress;
+    try {
+      await axios.post(`/api/sonos/${ip}/next`);
+      fetchDeviceState();
+    } catch (err) {
+      setControlError('Failed to skip');
+    }
+  };
+
+  const handleSonosPrevious = async () => {
+    const ip = device.ip || device.ipAddress;
+    try {
+      await axios.post(`/api/sonos/${ip}/previous`);
+      fetchDeviceState();
+    } catch (err) {
+      setControlError('Failed to go back');
+    }
+  };
+
+  const handleSonosVolumeChange = async (event, newValue) => {
+    setSonosVolume(newValue);
+    const ip = device.ip || device.ipAddress;
+    try {
+      await axios.post(`/api/sonos/${ip}/volume`, { level: newValue });
+    } catch (err) {
+      console.error('Error changing volume:', err);
+    }
+  };
+
+  // Test API handler
+  const handleTestApi = async () => {
+    const ip = device.ip || device.ipAddress;
+    if (!ip) return;
+    
+    setApiTestLoading(true);
+    setControlError(null);
+    
+    try {
+      let endpoint = null;
+      
+      // Determine the correct API endpoint based on device type
+      if (device.type === 'appletv') {
+        endpoint = `/api/appletv/${ip}/status`;
+      } else if (device.type === 'sonos' || (device.metadata?.SERVER && device.metadata.SERVER.includes('Sonos'))) {
+        endpoint = `/api/sonos/${ip}/status`;
+      } else if (device.type === 'wemo-plug') {
+        // WeMo uses status/all and we filter for the specific device
+        endpoint = `/api/wemo/status/all`;
+      } else if (device.type === 'samsung-tv') {
+        endpoint = `/api/samsung/${ip}/status`;
+      } else if (device.type && device.type.includes('tplink')) {
+        endpoint = `/api/tplink/${ip}/info`;
+      } else if (device.type === 'hue') {
+        endpoint = `/api/hue/lights`;
+      } else if (device.type === 'nanoleaf') {
+        endpoint = `/api/nanoleaf/${ip}/status`;
+      }
+      
+      if (endpoint) {
+        const res = await axios.get(endpoint);
+        
+        // For WeMo, filter to find the specific device by IP
+        if (device.type === 'wemo-plug' && res.data.devices) {
+          const wemoDevice = res.data.devices.find(d => d.host === ip);
+          if (wemoDevice) {
+            setApiTestResult(wemoDevice);
+          } else {
+            setApiTestResult({ 
+              message: 'Device not found in WeMo discovery. It may need to be re-discovered.',
+              allDevices: res.data.devices.map(d => ({ host: d.host, name: d.friendlyName }))
+            });
+          }
+        } else {
+          setApiTestResult(res.data);
+        }
+        setApiTestTimestamp(new Date().toLocaleString());
+      } else {
+        setApiTestResult({ message: 'No API endpoint available for this device type' });
+        setApiTestTimestamp(new Date().toLocaleString());
+      }
+    } catch (err) {
+      setApiTestResult({ error: err.message || 'API request failed', status: err.response?.status });
+      setApiTestTimestamp(new Date().toLocaleString());
+    }
+    
+    setApiTestLoading(false);
+  };
+
+  // Check if device is a Sonos
+  const isSonos = device && (device.type === 'sonos' || (device.metadata?.SERVER && device.metadata.SERVER.includes('Sonos')));
+
   if (loading) {
     return (
       <Container maxWidth="lg">
@@ -157,7 +360,12 @@ const DeviceDetails = () => {
           <CardContent>
             <Box sx={{ mb: 4 }}>
               <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>
-                {device.name}
+                {/* Use friendly name from API if available */}
+                {isSonos && sonosStatus?.device?.name 
+                  ? `${sonosStatus.device.name}${sonosStatus.device.model ? ` (${sonosStatus.device.model})` : ''}`
+                  : device.type === 'appletv' && appletvStatus?.device?.name
+                  ? `${appletvStatus.device.name}${appletvStatus.device.model ? ` (${appletvStatus.device.model})` : ''}`
+                  : device.name}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Chip
@@ -287,6 +495,320 @@ const DeviceDetails = () => {
                 </Grid>
               </Box>
             )}
+
+            {/* Sonos Controls */}
+            {isSonos && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <SpeakerIcon /> Sonos Speaker
+                </Typography>
+                {controlError && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    {controlError}
+                  </Alert>
+                )}
+                
+                {sonosLoading && !sonosStatus ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress />
+                  </Box>
+                ) : sonosStatus ? (
+                  <Grid container spacing={2}>
+                    {/* Now Playing */}
+                    <Grid item xs={12}>
+                      <Card variant="outlined" sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}>
+                        <CardContent>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                            <Typography variant="subtitle1" fontWeight="bold">🎵 Now Playing</Typography>
+                            <Chip 
+                              label={sonosStatus.state?.toUpperCase() || 'UNKNOWN'}
+                              color={sonosStatus.state === 'playing' ? 'success' : sonosStatus.state === 'paused' ? 'warning' : 'default'}
+                              size="small"
+                            />
+                          </Box>
+                          
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                            {sonosStatus.track?.albumArtURI ? (
+                              <Avatar 
+                                src={sonosStatus.track.albumArtURI} 
+                                sx={{ width: 80, height: 80, borderRadius: 2 }}
+                                variant="rounded"
+                              />
+                            ) : (
+                              <Avatar sx={{ width: 80, height: 80, borderRadius: 2, bgcolor: 'primary.main' }} variant="rounded">
+                                <MusicNoteIcon sx={{ fontSize: 40 }} />
+                              </Avatar>
+                            )}
+                            
+                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                              <Typography variant="h6" sx={{ fontWeight: 'bold' }} noWrap>
+                                {sonosStatus.track?.title || 'No track'}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" noWrap>
+                                {sonosStatus.track?.artist || 'Unknown artist'}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" noWrap>
+                                {sonosStatus.track?.album || 'Unknown album'}
+                              </Typography>
+                            </Box>
+                          </Box>
+                          
+                          {/* Progress Bar */}
+                          <Box sx={{ mb: 2 }}>
+                            <LinearProgress 
+                              variant="determinate" 
+                              value={sonosProgress}
+                              sx={{ 
+                                height: 6, 
+                                borderRadius: 3,
+                                backgroundColor: 'rgba(255,255,255,0.1)',
+                                '& .MuiLinearProgress-bar': {
+                                  borderRadius: 3,
+                                  background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)'
+                                }
+                              }}
+                            />
+                          </Box>
+                          
+                          {/* Playback Controls */}
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                            <IconButton onClick={handleSonosPrevious} size="large">
+                              <SkipPreviousIcon />
+                            </IconButton>
+                            
+                            {sonosStatus.state === 'playing' ? (
+                              <IconButton 
+                                onClick={handleSonosPause} 
+                                size="large"
+                                sx={{ 
+                                  backgroundColor: 'primary.main', 
+                                  color: 'white',
+                                  '&:hover': { backgroundColor: 'primary.dark' }
+                                }}
+                              >
+                                <PauseIcon />
+                              </IconButton>
+                            ) : (
+                              <IconButton 
+                                onClick={handleSonosPlay} 
+                                size="large"
+                                sx={{ 
+                                  backgroundColor: 'primary.main', 
+                                  color: 'white',
+                                  '&:hover': { backgroundColor: 'primary.dark' }
+                                }}
+                              >
+                                <PlayArrowIcon />
+                              </IconButton>
+                            )}
+                            
+                            <IconButton onClick={handleSonosStop} size="large">
+                              <StopIcon />
+                            </IconButton>
+                            
+                            <IconButton onClick={handleSonosNext} size="large">
+                              <SkipNextIcon />
+                            </IconButton>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    
+                    {/* Volume Control */}
+                    <Grid item xs={12} md={6}>
+                      <Card variant="outlined" sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}>
+                        <CardContent>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                            <VolumeUpIcon />
+                            <Typography variant="subtitle1" fontWeight="bold">Volume ({sonosVolume}%)</Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <VolumeOffIcon fontSize="small" />
+                            <Slider
+                              value={sonosVolume}
+                              onChange={handleSonosVolumeChange}
+                              min={0}
+                              max={100}
+                              valueLabelDisplay="auto"
+                              sx={{ flexGrow: 1 }}
+                            />
+                            <VolumeUpIcon fontSize="small" />
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    
+                    {/* Device Info */}
+                    <Grid item xs={12} md={6}>
+                      <Card variant="outlined" sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}>
+                        <CardContent>
+                          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Speaker Info</Typography>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <Typography variant="body2" color="text.secondary">Room</Typography>
+                              <Typography variant="body2">{sonosStatus.device?.name || 'Unknown'}</Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <Typography variant="body2" color="text.secondary">Model</Typography>
+                              <Typography variant="body2">{sonosStatus.device?.model || 'Unknown'}</Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <Typography variant="body2" color="text.secondary">Software</Typography>
+                              <Typography variant="body2">{sonosStatus.device?.softwareVersion || 'Unknown'}</Typography>
+                            </Box>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  </Grid>
+                ) : (
+                  <Alert severity="info">
+                    Unable to fetch Sonos status. The speaker may be a slave in a group.
+                    <Button 
+                      size="small" 
+                      onClick={fetchDeviceState} 
+                      sx={{ ml: 2 }}
+                    >
+                      Retry
+                    </Button>
+                  </Alert>
+                )}
+              </Box>
+            )}
+
+            {/* API Test Section */}
+            <Box sx={{ mb: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  API Response
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={handleTestApi}
+                  disabled={apiTestLoading}
+                  size="small"
+                  sx={{ 
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    '&:hover': { background: 'linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%)' }
+                  }}
+                >
+                  {apiTestLoading ? <CircularProgress size={20} color="inherit" /> : 'Test API'}
+                </Button>
+              </Box>
+              
+              {apiTestTimestamp && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                  Last tested: {apiTestTimestamp}
+                </Typography>
+              )}
+              
+              {apiTestResult && (
+                <Paper 
+                  sx={{ 
+                    p: 2, 
+                    background: 'rgba(0, 0, 0, 0.3)', 
+                    borderRadius: 2,
+                    maxHeight: 400,
+                    overflow: 'auto'
+                  }}
+                >
+                  {apiTestResult.error ? (
+                    <Alert severity="error" sx={{ mb: 1 }}>
+                      {apiTestResult.error} {apiTestResult.status && `(Status: ${apiTestResult.status})`}
+                    </Alert>
+                  ) : (
+                    <Box>
+                      {/* Show key fields in a nice format if available */}
+                      {(apiTestResult.device || apiTestResult.playing || apiTestResult.currentTrack) && (
+                        <Grid container spacing={2} sx={{ mb: 2 }}>
+                          {apiTestResult.device && (
+                            <Grid item xs={12} sm={6}>
+                              <Card variant="outlined" sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}>
+                                <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                                  <Typography variant="subtitle2" color="primary" gutterBottom>Device Info</Typography>
+                                  {apiTestResult.device.name && (
+                                    <Typography variant="body2">Name: <strong>{apiTestResult.device.name}</strong></Typography>
+                                  )}
+                                  {apiTestResult.device.model && (
+                                    <Typography variant="body2">Model: {apiTestResult.device.model}</Typography>
+                                  )}
+                                  {apiTestResult.device.mac && (
+                                    <Typography variant="body2">MAC: {apiTestResult.device.mac}</Typography>
+                                  )}
+                                  {apiTestResult.device.softwareVersion && (
+                                    <Typography variant="body2">Software: {apiTestResult.device.softwareVersion}</Typography>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            </Grid>
+                          )}
+                          {apiTestResult.currentTrack && (
+                            <Grid item xs={12} sm={6}>
+                              <Card variant="outlined" sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}>
+                                <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                                  <Typography variant="subtitle2" color="primary" gutterBottom>Now Playing</Typography>
+                                  {apiTestResult.currentTrack.title && (
+                                    <Typography variant="body2">Title: <strong>{apiTestResult.currentTrack.title}</strong></Typography>
+                                  )}
+                                  {apiTestResult.currentTrack.artist && (
+                                    <Typography variant="body2">Artist: {apiTestResult.currentTrack.artist}</Typography>
+                                  )}
+                                  {apiTestResult.currentTrack.album && (
+                                    <Typography variant="body2">Album: {apiTestResult.currentTrack.album}</Typography>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            </Grid>
+                          )}
+                          {apiTestResult.playing !== undefined && (
+                            <Grid item xs={12} sm={6}>
+                              <Card variant="outlined" sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}>
+                                <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                                  <Typography variant="subtitle2" color="primary" gutterBottom>Status</Typography>
+                                  <Typography variant="body2">
+                                    Playing: <Chip size="small" label={apiTestResult.playing ? 'Yes' : 'No'} color={apiTestResult.playing ? 'success' : 'default'} />
+                                  </Typography>
+                                  {apiTestResult.volume !== undefined && (
+                                    <Typography variant="body2" sx={{ mt: 0.5 }}>Volume: {apiTestResult.volume}%</Typography>
+                                  )}
+                                  {apiTestResult.muted !== undefined && (
+                                    <Typography variant="body2">Muted: {apiTestResult.muted ? 'Yes' : 'No'}</Typography>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            </Grid>
+                          )}
+                        </Grid>
+                      )}
+                      
+                      {/* Raw JSON response */}
+                      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>Raw Response</Typography>
+                      <Box
+                        sx={{
+                          background: 'rgba(0, 0, 0, 0.3)',
+                          p: 1.5,
+                          borderRadius: 1,
+                          overflow: 'auto',
+                          maxHeight: 200
+                        }}
+                      >
+                        <pre style={{ margin: 0, fontSize: '0.75rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                          {JSON.stringify(apiTestResult, null, 2)}
+                        </pre>
+                      </Box>
+                    </Box>
+                  )}
+                </Paper>
+              )}
+              
+              {!apiTestResult && !apiTestLoading && (
+                <Paper sx={{ p: 3, textAlign: 'center', background: 'rgba(0,0,0,0.2)' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Click "Test API" to fetch live data from this device
+                  </Typography>
+                </Paper>
+              )}
+            </Box>
 
             <Divider sx={{ my: 3 }} />
 

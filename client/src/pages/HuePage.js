@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import AddIcon from '@mui/icons-material/Add';
+import ApiIcon from '@mui/icons-material/Api';
 import { motion } from 'framer-motion';
 
 const HuePage = () => {
@@ -35,6 +36,11 @@ const HuePage = () => {
   const [error, setError] = useState(null);
   const [authDialog, setAuthDialog] = useState(false);
   const [authIp, setAuthIp] = useState('');
+  
+  // API Test state
+  const [apiTestResult, setApiTestResult] = useState(null);
+  const [apiTestLoading, setApiTestLoading] = useState(false);
+  const [apiTestTimestamp, setApiTestTimestamp] = useState(null);
 
   useEffect(() => {
     discoverBridges();
@@ -73,6 +79,21 @@ const HuePage = () => {
   const openAuthDialog = (ip) => {
     setAuthIp(ip);
     setAuthDialog(true);
+  };
+
+  const handleTestApi = async () => {
+    setApiTestLoading(true);
+    try {
+      const endpoint = selectedBridge ? `/api/hue/lights` : '/api/hue/discover';
+      const response = await fetch(endpoint);
+      const data = await response.json();
+      setApiTestResult(data);
+      setApiTestTimestamp(new Date().toLocaleString());
+    } catch (err) {
+      setApiTestResult({ error: err.message });
+      setApiTestTimestamp(new Date().toLocaleString());
+    }
+    setApiTestLoading(false);
   };
 
   const authenticateBridge = async () => {
@@ -344,6 +365,46 @@ const HuePage = () => {
           </Grid>
         )}
       </Grid>
+
+      {/* API Test Section */}
+      <Paper sx={{ mt: 4, p: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ApiIcon /> API Response
+          </Typography>
+          <Button
+            variant="contained"
+            size="small"
+            onClick={handleTestApi}
+            disabled={apiTestLoading}
+            sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+          >
+            {apiTestLoading ? <CircularProgress size={16} color="inherit" /> : 'Test API'}
+          </Button>
+        </Box>
+        {apiTestTimestamp && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+            Last tested: {apiTestTimestamp}
+          </Typography>
+        )}
+        {apiTestResult ? (
+          <Box sx={{ bgcolor: 'rgba(0,0,0,0.2)', p: 2, borderRadius: 1, maxHeight: 200, overflow: 'auto' }}>
+            {apiTestResult.error ? (
+              <Alert severity="error">{apiTestResult.error}</Alert>
+            ) : (
+              <pre style={{ margin: 0, fontSize: '0.7rem', whiteSpace: 'pre-wrap' }}>
+                {JSON.stringify(apiTestResult, null, 2)}
+              </pre>
+            )}
+          </Box>
+        ) : (
+          <Box sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(0,0,0,0.1)', borderRadius: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Click "Test API" to fetch Hue {selectedBridge ? 'lights' : 'bridge discovery'} data
+            </Typography>
+          </Box>
+        )}
+      </Paper>
 
       {/* Authentication Dialog */}
       <Dialog open={authDialog} onClose={() => setAuthDialog(false)}>

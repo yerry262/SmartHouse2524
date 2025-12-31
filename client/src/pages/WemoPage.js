@@ -30,6 +30,7 @@ import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import OutletIcon from '@mui/icons-material/Outlet';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import ApiIcon from '@mui/icons-material/Api';
 import { motion } from 'framer-motion';
 
 const WemoPage = () => {
@@ -39,6 +40,11 @@ const WemoPage = () => {
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [deviceDetails, setDeviceDetails] = useState(null);
   const [detailsDialog, setDetailsDialog] = useState(false);
+  
+  // API Test state
+  const [apiTestResult, setApiTestResult] = useState(null);
+  const [apiTestLoading, setApiTestLoading] = useState(false);
+  const [apiTestTimestamp, setApiTestTimestamp] = useState(null);
 
   useEffect(() => {
     discoverDevices();
@@ -132,6 +138,20 @@ const WemoPage = () => {
   const formatLastUpdate = (timestamp) => {
     if (!timestamp) return 'Unknown';
     return new Date(timestamp).toLocaleTimeString();
+  };
+
+  const handleTestApi = async (host) => {
+    setApiTestLoading(true);
+    try {
+      const response = await fetch(`/api/wemo/${host}/info`);
+      const data = await response.json();
+      setApiTestResult(data);
+      setApiTestTimestamp(new Date().toLocaleString());
+    } catch (err) {
+      setApiTestResult({ error: err.message });
+      setApiTestTimestamp(new Date().toLocaleString());
+    }
+    setApiTestLoading(false);
   };
 
   return (
@@ -286,6 +306,33 @@ const WemoPage = () => {
         </DialogTitle>
         <DialogContent>
           {deviceDetails && (
+            <>
+            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ApiIcon /> API Response
+              </Typography>
+              <Button
+                variant="contained"
+                size="small"
+                onClick={() => handleTestApi(selectedDevice)}
+                disabled={apiTestLoading}
+                sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+              >
+                {apiTestLoading ? <CircularProgress size={16} color="inherit" /> : 'Test API'}
+              </Button>
+            </Box>
+            {apiTestTimestamp && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                Last tested: {apiTestTimestamp}
+              </Typography>
+            )}
+            {apiTestResult && (
+              <Box sx={{ mb: 2, p: 1.5, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 1, maxHeight: 150, overflow: 'auto' }}>
+                <pre style={{ margin: 0, fontSize: '0.7rem', whiteSpace: 'pre-wrap' }}>
+                  {JSON.stringify(apiTestResult, null, 2)}
+                </pre>
+              </Box>
+            )}
             <List>
               <ListItem>
                 <ListItemIcon><PowerSettingsNewIcon /></ListItemIcon>
@@ -331,6 +378,7 @@ const WemoPage = () => {
                 />
               </ListItem>
             </List>
+            </>
           )}
         </DialogContent>
       </Dialog>
