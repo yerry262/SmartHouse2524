@@ -179,17 +179,32 @@ Sonos devices are discovered automatically on your local network using UPnP.
 - No credentials needed
 
 **What You Can Control:**
-- Play/Pause/Skip tracks
-- Volume control
-- View current track information
-- Multi-room audio support
+- Play/Pause/Stop/Skip tracks
+- Volume control with real-time slider
+- View current track information with album art
+- Progress bar with position/duration
+- Favorites playback
+- Multi-room zone support
+
+**Features:**
+- **Now Playing / Last Played**: Shows current or last played track even when stopped
+- **Bonded Device Detection**: Subs and Boosts marked as bonded
+- **Auto-refresh**: Live status updates every 3 seconds
+- **Speaker List**: Shows model, state chips, and color-coded status
 
 **API Endpoints:**
-- `GET /api/sonos/discover` - Discover Sonos devices
-- `GET /api/sonos/:ip` - Get device info
-- `POST /api/sonos/:ip/play` - Play
-- `POST /api/sonos/:ip/pause` - Pause
-- `POST /api/sonos/:ip/volume` - Set volume
+- `GET /api/sonos/discover` - Discover Sonos devices (with state, model, bonded flag)
+- `GET /api/sonos/:ip/status` - Full status with track info, device details
+- `GET /api/sonos/:ip/position` - Get track position/duration
+- `POST /api/sonos/:ip/play` - Start playback
+- `POST /api/sonos/:ip/pause` - Pause playback
+- `POST /api/sonos/:ip/stop` - Stop playback
+- `POST /api/sonos/:ip/next` - Next track
+- `POST /api/sonos/:ip/previous` - Previous track
+- `POST /api/sonos/:ip/volume` - Set volume (body: `{ level: 0-100 }`)
+- `GET /api/sonos/:ip/favorites` - Get favorites list
+- `POST /api/sonos/:ip/favorite/:id` - Play a favorite
+- `GET /api/sonos/zones/all` - Get all zone/group information
 
 ---
 
@@ -535,7 +550,47 @@ SmartHouse2524/
 1. **RTSP Support**: Web browsers don't natively support RTSP
 2. **Convert**: Use ffmpeg to convert RTSP to HLS or WebRTC
 3. **VLC**: Test stream URLs in VLC first
+## 📅 Recent Updates (December 31, 2025)
 
+### 🆕 Test API Feature
+Added a **Test API** button to all device pages that allows developers to:
+- Test backend API endpoints directly from the UI
+- View raw JSON responses with syntax highlighting
+- Debug device connectivity and API responses
+- See timestamps for when APIs were last called
+
+**Pages with Test API:** AlexaPage, AppleTVPage, DeviceDetails, EeroPage, EpsonPage, HuePage, LGPage, LIFXPage, NanoleafPage, RingPage, SamsungPage, SmartThingsPage, SonosPage, TpLinkPage, WemoPage
+
+### 🎵 Enhanced Sonos Integration
+- **Now Playing / Last Played**: Shows "🎵 Now Playing" when a speaker is active, "⏸️ Last Played" when stopped (keeps showing last track info)
+- **Bonded Device Detection**: Sonos Subs and Boosts are now marked as "🔗 Bonded" in the speaker list
+- **Enhanced Speaker List**: Shows model name, playing state chip, and color-coded avatars
+- **Real-time Status**: Auto-refresh for live playback updates, progress bar, album art
+
+### 📊 Dynamic Sidebar Sorting
+- Sidebar navigation menu now **sorts by device count** (most devices to least)
+- Dashboard stays at top, device categories are sorted dynamically
+- Each menu item shows accurate device count for its category
+- Device type matching improved for accurate counts
+
+### 🔧 Bug Fixes
+- Fixed WeMo API 404 error in DeviceDetails (now uses `/api/wemo/status/all` with filtering)
+- Fixed SmartThingsPage.js `handleTestApi` undefined error
+- Removed hardcoded localhost IPs - WebSocket URLs now dynamic
+- Added missing device type mappings for sidebar counts
+
+### 📺 Apple TV Integration
+- Added `/api/appletv/:ip/status` endpoint for device info
+- Uses `pyatv` Python package for discovery and status
+- Shows device name, model, MAC address, and playing status
+- Friendly names displayed instead of raw device identifiers
+
+### 📝 Documentation
+- Added comprehensive [client/src/pages/README.md](client/src/pages/README.md) with:
+  - Test API feature implementation guide
+  - Code patterns for adding Test API to new pages
+  - Table of all device pages and their API endpoints
+  - WeMo special handling documentation
 ## 🔐 Security Considerations
 
 1. **Environment Variables**: Never commit `.env` file to Git

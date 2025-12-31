@@ -514,12 +514,14 @@ const DeviceDetails = () => {
                   </Box>
                 ) : sonosStatus ? (
                   <Grid container spacing={2}>
-                    {/* Now Playing */}
+                    {/* Now Playing / Last Played */}
                     <Grid item xs={12}>
                       <Card variant="outlined" sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}>
                         <CardContent>
                           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                            <Typography variant="subtitle1" fontWeight="bold">🎵 Now Playing</Typography>
+                            <Typography variant="subtitle1" fontWeight="bold">
+                              {sonosStatus.state === 'playing' ? '🎵 Now Playing' : '⏸️ Last Played'}
+                            </Typography>
                             <Chip 
                               label={sonosStatus.state?.toUpperCase() || 'UNKNOWN'}
                               color={sonosStatus.state === 'playing' ? 'success' : sonosStatus.state === 'paused' ? 'warning' : 'default'}

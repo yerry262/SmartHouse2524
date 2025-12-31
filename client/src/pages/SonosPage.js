@@ -348,13 +348,33 @@ const SonosPage = () => {
                         }}
                       >
                         <ListItemAvatar>
-                          <Avatar>
+                          <Avatar sx={{ 
+                            bgcolor: device.state === 'playing' ? 'success.main' : 
+                                     device.state === 'paused' ? 'warning.main' :
+                                     device.isBonded ? 'info.main' : 'grey.600' 
+                          }}>
                             <SpeakerIcon />
                           </Avatar>
                         </ListItemAvatar>
                         <ListItemText
-                          primary={device.name || `Sonos ${device.ip}`}
-                          secondary={`IP: ${device.ip}`}
+                          primary={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                              {device.name || `Sonos ${device.ip}`}
+                              {device.state === 'playing' && (
+                                <Chip label="▶ Playing" size="small" color="success" sx={{ height: 18, fontSize: '0.65rem' }} />
+                              )}
+                              {device.isBonded && (
+                                <Chip label="🔗 Bonded" size="small" color="info" sx={{ height: 18, fontSize: '0.65rem' }} />
+                              )}
+                            </Box>
+                          }
+                          secondary={
+                            <Box component="span">
+                              <Typography variant="caption" component="span" sx={{ display: 'block' }}>
+                                {device.model || 'Unknown Model'} • {device.ip}
+                              </Typography>
+                            </Box>
+                          }
                         />
                       </ListItem>
                     ))}
@@ -368,12 +388,14 @@ const SonosPage = () => {
           <Grid item xs={12} md={8}>
             {selectedDevice && deviceStatus ? (
               <Grid container spacing={3}>
-                {/* Now Playing */}
+                {/* Now Playing / Last Played */}
                 <Grid item xs={12}>
                   <Card>
                     <CardContent>
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                        <Typography variant="h6">🎵 Now Playing</Typography>
+                        <Typography variant="h6">
+                          {deviceStatus.state === 'playing' ? '🎵 Now Playing' : '⏸️ Last Played'}
+                        </Typography>
                         <Chip 
                           icon={getStateIcon(deviceStatus.state)}
                           label={deviceStatus.state.toUpperCase()}

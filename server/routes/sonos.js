@@ -35,6 +35,10 @@ router.get('/discover', async (req, res) => {
         const description = await sonos.deviceDescription().catch(() => ({}));
         const currentState = await sonos.getCurrentState().catch(() => 'unknown');
         
+        // Check if this is a Sub (bonded device)
+        const isSub = (description.modelName || '').toLowerCase().includes('sub');
+        const isBoost = (description.modelName || '').toLowerCase().includes('boost');
+        
         deviceMap.set(device.host, {
           id: device.host,
           name: description.roomName || 'Sonos Device',
@@ -42,7 +46,8 @@ router.get('/discover', async (req, res) => {
           ip: device.host,
           port: device.port || 1400,
           type: 'sonos',
-          state: currentState,
+          state: isSub || isBoost ? 'bonded' : currentState,
+          isBonded: isSub || isBoost,
           serialNumber: description.serialNum || 'Unknown',
           softwareVersion: description.softwareVersion || 'Unknown'
         });
