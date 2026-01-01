@@ -269,4 +269,22 @@ pm2 describe smarthouse-backend
 
 ---
 
-*Last Updated: December 31, 2025*
+---
+
+*Last Updated: January 1, 2026*
+
+## 📝 Recent Updates
+
+### Device Discovery Improvements (Jan 1, 2026)
+- ✅ Fixed sidebar device counts for all device types (Epson printers now display correctly)
+- ✅ Apple TV discovery now preserves custom names (Living Room, Game Room, etc.)
+- ✅ Mac computers detected separately with 'mac' type (not classified as Apple TVs)
+- ✅ Prefer IPv4 addresses over IPv6 link-local for device identification
+- ✅ Extract MAC addresses from AirPlay deviceid for unique device IDs
+- ✅ Increased discovery timeout to 15 seconds for better Apple TV detection
+- ✅ Automatic deduplication prevents duplicate device entries
+- ✅ Quick Actions and Scenes sections start collapsed for cleaner dashboard
+
+### Utility Scripts
+- `server/utils/deduplicate-devices.js` - Remove duplicate devices from database
+- `server/utils/fix-apple-tvs.js` - Fix Apple TV device entries

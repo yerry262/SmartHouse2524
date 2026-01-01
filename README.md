@@ -11,6 +11,10 @@ A modern, full-stack smart home control system built with React.js and Node.js f
 - **📱 Modern UI**: Sleek, responsive interface with Material-UI and Framer Motion animations
 - **🔄 Real-time Updates**: WebSocket connection for live device status updates
 - **🔍 Device Discovery**: Automatic network scanning using SSDP and mDNS/Bonjour
+  - Smart device detection with IPv4 preference over IPv6
+  - MAC address extraction for unique device identification
+  - Automatic deduplication to prevent multiple entries
+  - 15-second timeout for reliable Apple TV/AirPlay discovery
 - **💡 Philips Hue Control**: Full control of Hue lights, groups, rooms, and scenes
 - **🔌 TP-Link Kasa**: Control smart plugs, bulbs, and light strips with energy monitoring
 - **💡 LIFX Control**: Direct local control of LIFX smart bulbs and strips
@@ -18,11 +22,16 @@ A modern, full-stack smart home control system built with React.js and Node.js f
 - **🤖 Xiaomi miIO**: Control Roborock robot vacuums and Xiaomi air purifiers
 - **🎵 Sonos Control**: Play/pause, volume, track navigation for Sonos speakers and amps
 - **📺 TV Control**: Remote control for Samsung Smart TVs, LG webOS TVs, and Apple TVs
+  - Preserves custom device names (Living Room, Game Room, etc.)
+  - Filters out Mac computers from Apple TV list
+  - Detects Mac devices separately with 'mac' type classification
 - **🔔 Ring Integration**: Monitor Ring doorbells and cameras
 - **📹 Camera Feeds**: View and manage security camera streams
 - **🌐 Network Monitoring**: Eero mesh network status and connected devices
 - **🔎 Subnet Scanner**: Angry IP Scanner-like port scanning and device identification
+- **📊 Smart Sidebar**: Accurate device counts by type with intelligent filtering
 - **🎨 Beautiful Design**: Gradient backgrounds, glass morphism effects, and smooth transitions
+- **📦 Collapsible Sections**: Quick Actions and Scenes start collapsed for cleaner UI
 
 ## 📋 Prerequisites
 
@@ -96,7 +105,7 @@ CAMERA_URLS=rtsp://admin:password@192.168.1.50:554/stream1
 
 # Network Configuration
 LOCAL_NETWORK_SUBNET=192.168.1.0/24
-DISCOVERY_TIMEOUT=10000
+DISCOVERY_TIMEOUT=15000
 ```
 
 ### 4. Set Up Apple TV Control (Optional)
