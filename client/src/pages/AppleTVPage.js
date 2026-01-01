@@ -7,74 +7,90 @@ import {
   Box,
   Button,
   Grid,
-  IconButton,
   CircularProgress,
-  Paper,
-  Alert
+  Chip
 } from '@mui/material';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import PauseIcon from '@mui/icons-material/Pause';
-import HomeIcon from '@mui/icons-material/Home';
-import MenuIcon from '@mui/icons-material/Menu';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import ApiIcon from '@mui/icons-material/Api';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 
 const AppleTVPage = () => {
   const [devices, setDevices] = useState([]);
-  const [selectedDevice, setSelectedDevice] = useState(null);
   const [loading, setLoading] = useState(false);
-  
-  // API Test state
-  const [apiTestResult, setApiTestResult] = useState(null);
-  const [apiTestLoading, setApiTestLoading] = useState(false);
-  const [apiTestTimestamp, setApiTestTimestamp] = useState(null);
+  const [pyatvInstalled, setPyatvInstalled] = useState(false);
+  const [playingStatus, setPlayingStatus] = useState({});
 
   useEffect(() => {
     fetchDevices();
+    // Auto-refresh devices every 30 seconds
+    const interval = setInterval(fetchDevices, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (devices.length > 0) {
+      devices.forEach(device => {
+        fetchPlayingStatus(device.ip);
+      });
+      // Auto-refresh playing status every 5 seconds
+      const interval = setInterval(() => {
+        devices.forEach(device => {
+          fetchPlayingStatus(device.ip);
+        });
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [devices]);
 
   const fetchDevices = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/appletv');
-      setDevices(response.data);
+      const response = await axios.get('/api/appletv/devices');
+      setDevices(response.data.devices || []);
+      setPyatvInstalled(response.data.pyatvInstalled || false);
     } catch (error) {
       console.error('Error fetching Apple TV devices:', error);
     }
     setLoading(false);
   };
 
-  const handleTestApi = async () => {
-    if (!selectedDevice) return;
-    setApiTestLoading(true);
+  const fetchPlayingStatus = async (ip) => {
     try {
-      const response = await axios.get(`/api/appletv/${selectedDevice}/status`);
-      setApiTestResult(response.data);
-      setApiTestTimestamp(new Date().toLocaleString());
-    } catch (err) {
-      setApiTestResult({ error: err.message || 'API request failed', status: err.response?.status });
-      setApiTestTimestamp(new Date().toLocaleString());
+      const response = await axios.get(`/api/appletv/${ip}/status`);
+      setPlayingStatus(prev => ({ ...prev, [ip]: response.data }));
+    } catch (error) {
+      console.error('Error fetching status:', error);
     }
-    setApiTestLoading(false);
   };
 
-  const sendCommand = async (command) => {
-    if (!selectedDevice) return;
+  const handleCommand = async (ip, command) => {
     try {
-      await axios.post(`/api/appletv/${selectedDevice}/command`, { command });
+      await axios.post(`/api/appletv/${ip}/command`, { command });
+      // Refresh status after command
+      setTimeout(() => fetchPlayingStatus(ip), 500);
     } catch (error) {
       console.error('Error sending command:', error);
+      // If error suggests pairing needed, update device state
+      if (error.response?.data?.error?.includes('pair')) {
+        alert('This Apple TV needs to be paired first. Click the "Pair Device" button.');
+      }
+    }
+  };
+
+  const handlePair = async (ip) => {
+    try {
+      const response = await axios.post(`/api/appletv/${ip}/pair`);
+      alert(`Pairing started! Check your Apple TV for a PIN code.\n\n${response.data.message}`);
+      // Refresh devices after pairing
+      setTimeout(fetchDevices, 2000);
+    } catch (error) {
+      console.error('Error pairing:', error);
+      alert(`Pairing failed: ${error.response?.data?.message || error.message}`);
     }
   };
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth="lg" sx={{ pt: 3 }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -99,208 +115,232 @@ const AppleTVPage = () => {
           </Button>
         </Box>
 
-        <Card sx={{ mb: 3, background: 'rgba(255, 193, 7, 0.1)' }}>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-              ⚠️ Setup Required
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Apple TV control requires pyatv to be installed. Install it with:
-              <Box
-                component="code"
-                sx={{
-                  display: 'block',
-                  mt: 1,
-                  p: 2,
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  borderRadius: 1,
-                }}
-              >
-                pip install pyatv
-              </Box>
-              Then pair your Apple TV using: atvremote --id [IP_ADDRESS] pair
-            </Typography>
-          </CardContent>
-        </Card>
-
         <Grid container spacing={3}>
-          {/* Device List */}
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                  Available Devices
-                </Typography>
-                {devices.length === 0 ? (
-                  <Typography color="text.secondary">
-                    Configure Apple TV IPs in .env file
-                  </Typography>
-                ) : (
-                  devices.map((device) => (
-                    <Button
-                      key={device.id}
-                      fullWidth
-                      variant={selectedDevice === device.ip ? 'contained' : 'outlined'}
-                      sx={{ mb: 1, justifyContent: 'flex-start', textTransform: 'none' }}
-                      onClick={() => setSelectedDevice(device.ip)}
-                    >
-                      Apple TV - {device.ip}
-                    </Button>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+          {devices.map((device) => {
+            // Prefer hostname if available and different from device name
+            let displayName = device.name;
+            if (device.hostname) {
+              const cleanHostname = device.hostname.replace('.local', '').replace(/-/g, ' ');
+              // Use hostname if it's different from the device name
+              if (cleanHostname.toLowerCase() !== device.name?.toLowerCase()) {
+                displayName = cleanHostname;
+              }
+            }
+            // Fallback: if name starts with generic 'Apple TV', use hostname
+            if (device.name?.startsWith('Apple TV (') && device.hostname) {
+              displayName = device.hostname.replace('.local', '').replace(/-/g, ' ');
+            }
 
-          {/* Remote Control */}
-          <Grid item xs={12} md={8}>
-            <Card>
-              <CardContent>
-                {!selectedDevice ? (
-                  <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                    Select a device to control
-                  </Typography>
-                ) : (
-                  <Box>
-                    <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, textAlign: 'center' }}>
-                      Remote Control
+            return (
+              <Grid item xs={12} md={6} lg={4} key={device.ip}>
+                <Card
+                  sx={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    backdropFilter: 'blur(10px)',
+                    '&:hover': { background: 'rgba(255, 255, 255, 0.08)' },
+                  }}
+                >
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
+                        {displayName}
+                      </Typography>
+                      <Chip
+                        label={device.type === 'appletv' ? 'Apple TV' : device.type}
+                        color="primary"
+                        size="small"
+                      />
+                    </Box>
+
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>IP:</strong> {device.ip}
                     </Typography>
+                    {device.model && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Model:</strong> {device.model}
+                      </Typography>
+                    )}
+                    {device.mac && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        <strong>MAC:</strong> {device.mac}
+                      </Typography>
+                    )}
 
-                    {/* D-Pad */}
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
-                      <IconButton
-                        onClick={() => sendCommand('up')}
-                        sx={{ mb: 1, background: 'rgba(102, 126, 234, 0.1)' }}
-                        size="large"
-                      >
-                        <ArrowUpwardIcon />
-                      </IconButton>
-                      <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
-                        <IconButton
-                          onClick={() => sendCommand('left')}
-                          sx={{ background: 'rgba(102, 126, 234, 0.1)' }}
-                          size="large"
-                        >
-                          <ArrowBackIcon />
-                        </IconButton>
-                        <IconButton
-                          onClick={() => sendCommand('select')}
-                          sx={{
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            width: 64,
-                            height: 64,
-                          }}
-                          size="large"
-                        >
-                          OK
-                        </IconButton>
-                        <IconButton
-                          onClick={() => sendCommand('right')}
-                          sx={{ background: 'rgba(102, 126, 234, 0.1)' }}
-                          size="large"
-                        >
-                          <ArrowForwardIcon />
-                        </IconButton>
-                      </Box>
-                      <IconButton
-                        onClick={() => sendCommand('down')}
-                        sx={{ background: 'rgba(102, 126, 234, 0.1)' }}
-                        size="large"
-                      >
-                        <ArrowDownwardIcon />
-                      </IconButton>
-                    </Box>
+                    {/* Pair Button */}
+                    <Button
+                      variant="outlined"
+                      color="warning"
+                      fullWidth
+                      onClick={() => handlePair(device.ip)}
+                      sx={{ mb: 2 }}
+                    >
+                      🔗 Pair Device
+                    </Button>
 
-                    {/* Playback Controls */}
-                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 4 }}>
-                      <Button
-                        variant="outlined"
-                        startIcon={<PlayArrowIcon />}
-                        onClick={() => sendCommand('play')}
+                    {playingStatus[device.ip] && (
+                      <Box
+                        sx={{
+                          mb: 2,
+                          p: 2,
+                          background: 'rgba(33, 150, 243, 0.1)',
+                          borderRadius: 1,
+                        }}
                       >
-                        Play
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<PauseIcon />}
-                        onClick={() => sendCommand('pause')}
-                      >
-                        Pause
-                      </Button>
-                    </Box>
-
-                    {/* Menu Buttons */}
-                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 4 }}>
-                      <Button
-                        variant="contained"
-                        startIcon={<MenuIcon />}
-                        onClick={() => sendCommand('menu')}
-                      >
-                        Menu
-                      </Button>
-                      <Button
-                        variant="contained"
-                        startIcon={<HomeIcon />}
-                        onClick={() => sendCommand('home')}
-                      >
-                        Home
-                      </Button>
-                    </Box>
-
-                    {/* API Test Section */}
-                    <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <ApiIcon /> API Response
+                        <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 600 }}>
+                          Status:
                         </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', fontSize: '0.8rem' }}>
+                          {playingStatus[device.ip].playing || 'No status available'}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {/* Remote Control Buttons */}
+                    <Box sx={{ mt: 2 }}>
+                      {/* D-Pad Navigation */}
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(3, 1fr)',
+                          gap: 1,
+                          mb: 2,
+                        }}
+                      >
+                        <Box />
                         <Button
                           variant="contained"
-                          size="small"
-                          onClick={handleTestApi}
-                          disabled={apiTestLoading}
-                          sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                          onClick={() => handleCommand(device.ip, 'up')}
+                          sx={{ minWidth: 0, aspectRatio: '1' }}
                         >
-                          {apiTestLoading ? <CircularProgress size={16} color="inherit" /> : 'Test API'}
+                          ↑
+                        </Button>
+                        <Box />
+                        <Button
+                          variant="contained"
+                          onClick={() => handleCommand(device.ip, 'left')}
+                          sx={{ minWidth: 0, aspectRatio: '1' }}
+                        >
+                          ←
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={() => handleCommand(device.ip, 'select')}
+                          sx={{ minWidth: 0, aspectRatio: '1', fontWeight: 600 }}
+                        >
+                          OK
+                        </Button>
+                        <Button
+                          variant="contained"
+                          onClick={() => handleCommand(device.ip, 'right')}
+                          sx={{ minWidth: 0, aspectRatio: '1' }}
+                        >
+                          →
+                        </Button>
+                        <Box />
+                        <Button
+                          variant="contained"
+                          onClick={() => handleCommand(device.ip, 'down')}
+                          sx={{ minWidth: 0, aspectRatio: '1' }}
+                        >
+                          ↓
+                        </Button>
+                        <Box />
+                      </Box>
+
+                      {/* Menu and Home Buttons */}
+                      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                        <Button
+                          variant="outlined"
+                          onClick={() => handleCommand(device.ip, 'menu')}
+                          fullWidth
+                        >
+                          Menu
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          onClick={() => handleCommand(device.ip, 'home')}
+                          fullWidth
+                        >
+                          Home
                         </Button>
                       </Box>
-                      {apiTestTimestamp && (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                          Last tested: {apiTestTimestamp}
-                        </Typography>
-                      )}
-                      {apiTestResult ? (
-                        <Paper sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.3)', maxHeight: 200, overflow: 'auto' }}>
-                          {apiTestResult.error ? (
-                            <Alert severity="error" sx={{ mb: 1 }}>{apiTestResult.error}</Alert>
-                          ) : (
-                            <>
-                              {apiTestResult.device && (
-                                <Box sx={{ mb: 2 }}>
-                                  <Typography variant="body2"><strong>Name:</strong> {apiTestResult.device.name}</Typography>
-                                  <Typography variant="body2"><strong>Model:</strong> {apiTestResult.device.model}</Typography>
-                                  <Typography variant="body2"><strong>MAC:</strong> {apiTestResult.device.mac}</Typography>
-                                </Box>
-                              )}
-                              <Typography variant="caption" color="text.secondary">Raw Response:</Typography>
-                              <pre style={{ margin: 0, fontSize: '0.7rem', whiteSpace: 'pre-wrap' }}>
-                                {JSON.stringify(apiTestResult, null, 2)}
-                              </pre>
-                            </>
-                          )}
-                        </Paper>
-                      ) : (
-                        <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(0,0,0,0.2)' }}>
-                          <Typography variant="body2" color="text.secondary">
-                            Click "Test API" to fetch device info
-                          </Typography>
-                        </Paper>
-                      )}
+
+                      {/* Playback Controls */}
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(4, 1fr)',
+                          gap: 1,
+                          mb: 2,
+                        }}
+                      >
+                        <Button
+                          variant="outlined"
+                          onClick={() => handleCommand(device.ip, 'previous')}
+                          sx={{ minWidth: 0 }}
+                        >
+                          ⏮
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="success"
+                          onClick={() => handleCommand(device.ip, 'play_pause')}
+                          sx={{ minWidth: 0 }}
+                        >
+                          ⏯
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          onClick={() => handleCommand(device.ip, 'stop')}
+                          sx={{ minWidth: 0 }}
+                        >
+                          ⏹
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          onClick={() => handleCommand(device.ip, 'next')}
+                          sx={{ minWidth: 0 }}
+                        >
+                          ⏭
+                        </Button>
+                      </Box>
+
+                      {/* Volume Controls */}
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          variant="outlined"
+                          onClick={() => handleCommand(device.ip, 'volume_down')}
+                          fullWidth
+                        >
+                          Vol -
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          onClick={() => handleCommand(device.ip, 'volume_up')}
+                          fullWidth
+                        >
+                          Vol +
+                        </Button>
+                      </Box>
                     </Box>
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
+
+          {devices.length === 0 && (
+            <Grid item xs={12}>
+              <Card sx={{ background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)' }}>
+                <CardContent>
+                  <Typography variant="body2" color="text.secondary" align="center">
+                    No Apple TV devices found. Make sure your devices are on the same network and discoverable.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
         </Grid>
       </motion.div>
     </Container>

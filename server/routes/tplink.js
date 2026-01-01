@@ -27,7 +27,9 @@ if (Client) {
   });
 
   tplinkClient.on('device-new', (device) => {
-    console.log(`TP-Link: New device found - ${device.alias} (${device.host})`);
+    if (global.activityLog) {
+      global.activityLog.discovery('TP-Link', `Found: ${device.alias}`, { ip: device.host, model: device.model });
+    }
     discoveredDevices.set(device.host, device);
     
     if (global.broadcast) {
@@ -44,7 +46,9 @@ if (Client) {
   });
 
   tplinkClient.on('device-online', (device) => {
-    console.log(`TP-Link: Device online - ${device.alias}`);
+    if (global.activityLog) {
+      global.activityLog.network('TP-Link', `${device.alias} came online`, { ip: device.host });
+    }
     discoveredDevices.set(device.host, device);
   });
 }
@@ -180,6 +184,11 @@ router.post('/:host/power', async (req, res) => {
     const device = await tplinkClient.getDevice({ host });
     await device.setPowerState(state);
 
+    // Log the action
+    if (global.activityLog) {
+      global.activityLog.action('TP-Link', `${state ? '🟢 On' : '🔴 Off'}: ${device.alias || host}`);
+    }
+
     if (global.broadcast) {
       global.broadcast({
         type: 'tplink_power_update',
@@ -195,6 +204,9 @@ router.post('/:host/power', async (req, res) => {
       powerState: state
     });
   } catch (error) {
+    if (global.activityLog) {
+      global.activityLog.error('TP-Link', `Power control failed (${host}): ${error.message}`);
+    }
     console.error('Error setting TP-Link power state:', error);
     res.status(500).json({ error: error.message });
   }

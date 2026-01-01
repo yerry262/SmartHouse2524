@@ -1,13 +1,15 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, IconButton, Box, Chip } from '@mui/material';
+import { AppBar, Toolbar, Typography, IconButton, Box, Chip, Badge, Tooltip } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
 import WifiIcon from '@mui/icons-material/Wifi';
 import WifiOffIcon from '@mui/icons-material/WifiOff';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import CloudSyncIcon from '@mui/icons-material/CloudSync';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
-const Navbar = ({ toggleSidebar, wsConnected }) => {
+const Navbar = ({ toggleSidebar, toggleAccountsPanel, wsConnected, linkedAccountsCount = 0 }) => {
   const navigate = useNavigate();
 
   return (
@@ -60,8 +62,36 @@ const Navbar = ({ toggleSidebar, wsConnected }) => {
           label={wsConnected ? 'Connected' : 'Disconnected'}
           color={wsConnected ? 'success' : 'error'}
           size="small"
-          sx={{ fontWeight: 600 }}
+          sx={{ fontWeight: 600, mr: 2 }}
         />
+
+        {/* Account / Cloud Sync Button */}
+        <Tooltip title={linkedAccountsCount > 0 ? `${linkedAccountsCount} accounts linked` : 'Link cloud accounts'}>
+          <IconButton
+            color="inherit"
+            onClick={toggleAccountsPanel}
+            sx={{
+              background: linkedAccountsCount > 0 ? 'rgba(102, 126, 234, 0.2)' : 'transparent',
+              '&:hover': {
+                background: 'rgba(102, 126, 234, 0.3)',
+              },
+            }}
+          >
+            <Badge 
+              badgeContent={linkedAccountsCount} 
+              color="primary"
+              sx={{
+                '& .MuiBadge-badge': {
+                  fontSize: '0.65rem',
+                  height: 16,
+                  minWidth: 16,
+                }
+              }}
+            >
+              {linkedAccountsCount > 0 ? <CloudSyncIcon sx={{ color: '#667eea' }} /> : <AccountCircleIcon />}
+            </Badge>
+          </IconButton>
+        </Tooltip>
       </Toolbar>
     </AppBar>
   );

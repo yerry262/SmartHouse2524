@@ -80,6 +80,11 @@ router.get('/discover', async (req, res) => {
     });
 
     console.log(`Found ${washers.length} Samsung washers`);
+    
+    // Log discovery
+    if (global.activityLog && washers.length > 0) {
+      global.activityLog.discovery('Samsung Washer', `Found ${washers.length} washer(s)`);
+    }
 
     res.json({
       installed: true,
@@ -98,6 +103,9 @@ router.get('/discover', async (req, res) => {
 
   } catch (error) {
     console.error('Samsung washer discovery error:', error);
+    if (global.activityLog) {
+      global.activityLog.error('Samsung Washer', `Discovery failed: ${error.message}`);
+    }
     res.status(500).json({
       installed: true,
       error: 'Discovery failed: ' + error.message,

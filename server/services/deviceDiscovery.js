@@ -60,130 +60,135 @@ class DeviceDiscovery {
   }
 
   async discoverDevices() {
+    console.log('Starting device discovery...');
+    const startTime = Date.now();
     const discovered = [];
+    const discoveryPromises = [];
 
-    // Discover Philips Hue bridges if available
+    // 1. Discover Philips Hue bridges (Parallel)
     if (HueDiscovery) {
-      try {
-        let hueResults = [];
+      discoveryPromises.push((async () => {
         try {
-          hueResults = await HueDiscovery.nupnpSearch();
-        } catch (err) {
-          if (err.message && err.message.includes('429')) {
-            console.log('Hue N-UPnP rate limited (429), falling back to local UPnP search...');
-          } else {
-            console.warn('Hue N-UPnP search failed:', err.message);
-          }
-          
-          // Fallback to local UPnP search if available
-          if (HueDiscovery.upnpSearch) {
-            try {
-              hueResults = await HueDiscovery.upnpSearch(5000); // 5s timeout
-            } catch (localErr) {
-              console.warn('Hue local UPnP search failed:', localErr.message);
+          let hueResults = [];
+          try {
+            hueResults = await HueDiscovery.nupnpSearch();
+          } catch (err) {
+            if (err.message && err.message.includes('429')) {
+              console.log('Hue N-UPnP rate limited (429), falling back to local UPnP search...');
+            } else {
+              console.warn('Hue N-UPnP search failed:', err.message);
+            }
+            
+            if (HueDiscovery.upnpSearch) {
+              try {
+                hueResults = await HueDiscovery.upnpSearch(5000);
+              } catch (localErr) {
+                console.warn('Hue local UPnP search failed:', localErr.message);
+              }
             }
           }
-        }
 
-        hueResults.forEach(bridge => {
-          // Hue bridge ID is often the MAC or derived from it
-          const mac = bridge.id ? bridge.id.match(/.{1,2}/g).join(':') : null;
-          discovered.push({
-            id: this.generateId(mac || bridge.ipaddress),
-            type: 'hue-bridge',
-            name: bridge.name || 'Philips Hue Bridge',
-            ipAddress: bridge.ipaddress,
-            ip: bridge.ipaddress,
-            mac: mac,
-            modelId: bridge.model?.modelid,
-            manufacturer: 'Philips',
-            lastSeen: new Date()
-          });
-        });
-        if (hueResults.length > 0) {
-          console.log(`Discovered ${hueResults.length} Hue bridge(s)`);
-        }
-      } catch (error) {
-        console.error('Error discovering Hue bridges:', error.message);
-      }
-    }
-
-    // Discover TP-Link devices if available
-    if (TplinkClient) {
-      try {
-        const tplinkClient = new TplinkClient();
-        const tplinkDevices = [];
-        
-        tplinkClient.startDiscovery({ discoveryTimeout: 5000 });
-        
-        tplinkClient.on('device-new', (device) => {
-          tplinkDevices.push({
-            id: this.generateId(device.mac || device.host),
-            type: device.deviceType === 'bulb' ? 'tplink-bulb' : 'tplink-plug',
-            name: device.alias,
-            ipAddress: device.host,
-            ip: device.host,
-            mac: device.mac,
-            model: device.model,
-            manufacturer: 'TP-Link',
-            deviceId: device.deviceId,
-            lastSeen: new Date()
-          });
-        });
-
-        // Wait for discovery to complete
-        await new Promise(resolve => setTimeout(resolve, 6000));
-        tplinkClient.stopDiscovery();
-        
-        discovered.push(...tplinkDevices);
-        console.log(`Discovered ${tplinkDevices.length} TP-Link device(s)`);
-      } catch (error) {
-        console.error('Error discovering TP-Link devices:', error);
-      }
-    }
-
-    // Discover WeMo devices if available
-    if (Wemo) {
-      try {
-        const wemo = new Wemo();
-        const wemoDevices = [];
-        
-        // WeMo discovery is callback based
-        wemo.discover((err, deviceInfo) => {
-          if (!err && deviceInfo) {
-            wemoDevices.push({
-              id: this.generateId(deviceInfo.macAddress || deviceInfo.host),
-              type: 'wemo-plug',
-              name: deviceInfo.friendlyName,
-              ipAddress: deviceInfo.host,
-              ip: deviceInfo.host,
-              mac: deviceInfo.macAddress,
-              model: deviceInfo.modelName,
-              manufacturer: 'Belkin',
-              serialNumber: deviceInfo.serialNumber,
+          hueResults.forEach(bridge => {
+            const mac = bridge.id ? bridge.id.match(/.{1,2}/g).join(':') : null;
+            discovered.push({
+              id: this.generateId(mac || bridge.ipaddress),
+              type: 'hue-bridge',
+              name: bridge.name || 'Philips Hue Bridge',
+              ipAddress: bridge.ipaddress,
+              ip: bridge.ipaddress,
+              mac: mac,
+              modelId: bridge.model?.modelid,
+              manufacturer: 'Philips',
               lastSeen: new Date()
             });
+          });
+          if (hueResults.length > 0) {
+            console.log(`Discovered ${hueResults.length} Hue bridge(s)`);
           }
-        });
-
-        // Wait for discovery to collect devices
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        
-        discovered.push(...wemoDevices);
-        console.log(`Discovered ${wemoDevices.length} WeMo device(s)`);
-      } catch (error) {
-        console.error('Error discovering WeMo devices:', error);
-      }
+        } catch (error) {
+          console.error('Error discovering Hue bridges:', error.message);
+        }
+      })());
     }
 
-    // SSDP Discovery (for UPnP devices like Samsung TVs, some cameras)
-    const ssdpClient = new SSDP();
-    
-    return new Promise((resolve) => {
+    // 2. Discover TP-Link devices (Parallel)
+    if (TplinkClient) {
+      discoveryPromises.push((async () => {
+        try {
+          const tplinkClient = new TplinkClient();
+          const tplinkDevices = [];
+          
+          tplinkClient.startDiscovery({ discoveryTimeout: 5000 });
+          
+          tplinkClient.on('device-new', (device) => {
+            tplinkDevices.push({
+              id: this.generateId(device.mac || device.host),
+              type: device.deviceType === 'bulb' ? 'tplink-bulb' : 'tplink-plug',
+              name: device.alias,
+              ipAddress: device.host,
+              ip: device.host,
+              mac: device.mac,
+              model: device.model,
+              manufacturer: 'TP-Link',
+              deviceId: device.deviceId,
+              lastSeen: new Date()
+            });
+          });
+
+          await new Promise(resolve => setTimeout(resolve, 6000));
+          tplinkClient.stopDiscovery();
+          
+          discovered.push(...tplinkDevices);
+          console.log(`Discovered ${tplinkDevices.length} TP-Link device(s)`);
+        } catch (error) {
+          console.error('Error discovering TP-Link devices:', error);
+        }
+      })());
+    }
+
+    // 3. Discover WeMo devices (Parallel)
+    if (Wemo) {
+      discoveryPromises.push((async () => {
+        try {
+          const wemo = new Wemo();
+          const wemoDevices = [];
+          
+          wemo.discover((err, deviceInfo) => {
+            if (!err && deviceInfo) {
+              wemoDevices.push({
+                id: this.generateId(deviceInfo.macAddress || deviceInfo.host),
+                type: 'wemo-plug',
+                name: deviceInfo.friendlyName,
+                ipAddress: deviceInfo.host,
+                ip: deviceInfo.host,
+                mac: deviceInfo.macAddress,
+                model: deviceInfo.modelName,
+                manufacturer: 'Belkin',
+                serialNumber: deviceInfo.serialNumber,
+                lastSeen: new Date()
+              });
+            }
+          });
+
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          
+          discovered.push(...wemoDevices);
+          console.log(`Discovered ${wemoDevices.length} WeMo device(s)`);
+        } catch (error) {
+          console.error('Error discovering WeMo devices:', error);
+        }
+      })());
+    }
+
+    // 4. SSDP & mDNS Discovery (Parallel)
+    discoveryPromises.push(new Promise((resolve) => {
+      const ssdpClient = new SSDP();
+      const ssdpDiscovered = [];
+      
       const timeout = setTimeout(() => {
         ssdpClient.stop();
-        this.mergeDevices(discovered);
-        resolve(discovered);
+        discovered.push(...ssdpDiscovered);
+        resolve();
       }, parseInt(process.env.DISCOVERY_TIMEOUT) || 10000);
 
       ssdpClient.on('response', (headers, statusCode, rinfo) => {
@@ -198,11 +203,14 @@ class DeviceDiscovery {
           metadata: headers
         };
         
-        discovered.push(device);
-        global.broadcast({ type: 'device_discovered', device });
+        // Avoid duplicates within SSDP results
+        if (!ssdpDiscovered.some(d => d.ip === device.ip)) {
+            ssdpDiscovered.push(device);
+            global.broadcast({ type: 'device_discovered', device });
+        }
       });
 
-      // Discover mDNS/Bonjour devices (Apple TV, Sonos, etc.)
+      // Discover mDNS/Bonjour devices (HTTP services)
       const browser = this.bonjour.find({ type: 'http' });
       
       browser.on('up', (service) => {
@@ -217,12 +225,61 @@ class DeviceDiscovery {
           metadata: service
         };
         
-        discovered.push(device);
-        global.broadcast({ type: 'device_discovered', device });
+        if (!ssdpDiscovered.some(d => d.ip === device.ip)) {
+            ssdpDiscovered.push(device);
+            global.broadcast({ type: 'device_discovered', device });
+        }
+      });
+
+      // Discover Apple TV and AirPlay devices
+      const airplayBrowser = this.bonjour.find({ type: 'airplay' });
+      
+      airplayBrowser.on('up', (service) => {
+        // Try to extract a meaningful name from service
+        let deviceName = service.name || 'Apple TV';
+        
+        // If service has a host, extract hostname without domain
+        if (service.host) {
+          const hostname = service.host.replace('.local', '').replace('.lan', '');
+          // Use hostname if it looks more descriptive than the service name
+          if (hostname && hostname.length > 0 && !hostname.match(/^[0-9a-f-]+$/i)) {
+            deviceName = hostname;
+          }
+        }
+        
+        // If service.txt has a model or friendly name, use it
+        if (service.txt && typeof service.txt === 'object') {
+          if (service.txt.model) deviceName = service.txt.model;
+          if (service.txt.deviceid) deviceName = service.txt.deviceid;
+        }
+        
+        const device = {
+          id: this.generateId(service.host || service.addresses[0]),
+          type: 'appletv',
+          name: deviceName,
+          hostname: service.host,
+          ip: service.addresses[0],
+          port: service.port,
+          status: 'online',
+          lastSeen: new Date().toISOString(),
+          metadata: service
+        };
+        
+        if (!ssdpDiscovered.some(d => d.ip === device.ip)) {
+            ssdpDiscovered.push(device);
+            global.broadcast({ type: 'device_discovered', device });
+        }
       });
 
       ssdpClient.search('ssdp:all');
-    });
+    }));
+
+    // Wait for all discovery methods to complete
+    await Promise.all(discoveryPromises);
+
+    this.mergeDevices(discovered);
+    console.log(`Discovery completed in ${(Date.now() - startTime) / 1000}s. Total devices found: ${discovered.length}`);
+    return discovered;
   }
 
   detectDeviceType(headers) {

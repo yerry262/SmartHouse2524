@@ -57,6 +57,11 @@ const discoverHandler = async (req, res) => {
       lastActivity: device.lastActivityTime
     }));
 
+    // Log discovery
+    if (global.activityLog && transformedDevices.length > 0) {
+      global.activityLog.discovery('SmartThings', `Discovered ${transformedDevices.length} device(s)`);
+    }
+
     res.json({
       success: true,
       message: `Discovered ${transformedDevices.length} SmartThings devices`,
@@ -66,6 +71,9 @@ const discoverHandler = async (req, res) => {
     
   } catch (error) {
     console.error('SmartThings discovery error:', error.response?.data || error.message);
+    if (global.activityLog) {
+      global.activityLog.error('SmartThings', `Discovery failed: ${error.message}`);
+    }
     res.status(500).json({ 
       success: false,
       error: error.response?.data?.message || error.message,

@@ -7,8 +7,10 @@ import {
   Videocam,
   Speaker,
   TrendingUp,
+  Outlet,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+import ClockCalendarCard from './ClockCalendarCard';
 
 const DeviceStats = ({ devices }) => {
   const stats = [
@@ -17,38 +19,20 @@ const DeviceStats = ({ devices }) => {
       value: devices.length,
       icon: <Power />,
       color: '#667eea',
-      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      gradient: 'linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%)',
     },
     {
-      title: 'Lights',
+      title: 'Smart Plugs',
       value: devices.filter(d => 
-        d.type?.toLowerCase().includes('light') || 
-        d.type?.toLowerCase().includes('bulb') ||
-        d.type?.toLowerCase().includes('hue')
+        d.type?.toLowerCase().includes('plug') || 
+        d.type?.toLowerCase().includes('outlet') ||
+        d.type?.toLowerCase().includes('socket') ||
+        (d.type?.toLowerCase().includes('wemo') && !d.model?.toLowerCase().includes('lightswitch')) ||
+        (d.type?.toLowerCase().includes('tplink') && d.model?.toLowerCase().includes('plug'))
       ).length,
-      icon: <Lightbulb />,
-      color: '#f093fb',
-      gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-    },
-    {
-      title: 'Displays',
-      value: devices.filter(d => 
-        d.type?.toLowerCase().includes('tv') || 
-        d.type?.toLowerCase().includes('display')
-      ).length,
-      icon: <Tv />,
-      color: '#4facfe',
-      gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-    },
-    {
-      title: 'Cameras',
-      value: devices.filter(d => 
-        d.type?.toLowerCase().includes('camera') ||
-        d.type?.toLowerCase().includes('doorbell')
-      ).length,
-      icon: <Videocam />,
-      color: '#43e97b',
-      gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+      icon: <Outlet />,
+      color: '#76b900',
+      gradient: 'linear-gradient(135deg, rgba(118, 185, 0, 0.2) 0%, rgba(76, 175, 80, 0.2) 100%)',
     },
     {
       title: 'Speakers',
@@ -60,29 +44,77 @@ const DeviceStats = ({ devices }) => {
       ).length,
       icon: <Speaker />,
       color: '#fa709a',
-      gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+      gradient: 'linear-gradient(135deg, rgba(250, 112, 154, 0.2) 0%, rgba(254, 225, 64, 0.2) 100%)',
+    },
+    {
+      title: 'Lights',
+      value: devices.filter(d => 
+        d.type?.toLowerCase().includes('light') || 
+        d.type?.toLowerCase().includes('bulb') ||
+        d.type?.toLowerCase().includes('hue') ||
+        d.type?.toLowerCase().includes('lifx') ||
+        d.type?.toLowerCase().includes('nanoleaf') ||
+        (d.type?.toLowerCase().includes('wemo') && d.model?.toLowerCase().includes('lightswitch'))
+      ).length,
+      icon: <Lightbulb />,
+      color: '#f093fb',
+      gradient: 'linear-gradient(135deg, rgba(240, 147, 251, 0.2) 0%, rgba(245, 87, 108, 0.2) 100%)',
+    },
+    {
+      title: 'Displays',
+      value: devices.filter(d => 
+        d.type?.toLowerCase().includes('tv') || 
+        d.type?.toLowerCase().includes('display')
+      ).length,
+      icon: <Tv />,
+      color: '#4facfe',
+      gradient: 'linear-gradient(135deg, rgba(79, 172, 254, 0.2) 0%, rgba(0, 242, 254, 0.2) 100%)',
+    },
+    {
+      title: 'Cameras',
+      value: devices.filter(d => 
+        d.type?.toLowerCase().includes('camera') ||
+        d.type?.toLowerCase().includes('doorbell')
+      ).length,
+      icon: <Videocam />,
+      color: '#43e97b',
+      gradient: 'linear-gradient(135deg, rgba(67, 233, 123, 0.2) 0%, rgba(56, 249, 215, 0.2) 100%)',
     },
     {
       title: 'Online',
       value: devices.filter(d => d.online !== false).length,
       icon: <TrendingUp />,
       color: '#30cfd0',
-      gradient: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+      gradient: 'linear-gradient(135deg, rgba(48, 207, 208, 0.2) 0%, rgba(51, 8, 103, 0.2) 100%)',
     },
   ];
 
   return (
     <Grid container spacing={3} sx={{ mb: 4 }}>
-      {stats.map((stat, index) => (
-        <Grid item xs={12} sm={6} md={4} lg={2} key={stat.title}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card
-              sx={{
+      <Grid item xs={12} md={4} lg={3}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0 }}
+          style={{ height: '100%' }}
+        >
+          <ClockCalendarCard />
+        </motion.div>
+      </Grid>
+      <Grid item xs={12} md={8} lg={9}>
+        <Grid container spacing={3}>
+          {stats.map((stat, index) => (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={stat.title}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: (index + 1) * 0.1 }}
+              >
+                <Card
+                  sx={{
                 background: stat.gradient,
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
                 position: 'relative',
                 overflow: 'visible',
                 '&:hover': {
@@ -140,6 +172,8 @@ const DeviceStats = ({ devices }) => {
           </motion.div>
         </Grid>
       ))}
+        </Grid>
+      </Grid>
     </Grid>
   );
 };

@@ -1,13 +1,73 @@
 const express = require('express');
 const router = express.Router();
+const axios = require('axios');
 const DeviceDiscovery = require('../services/deviceDiscovery');
 
 const discovery = new DeviceDiscovery();
 
+// Helper to get base URL for internal API calls
+const getBaseUrl = () => `http://localhost:${process.env.PORT || 5000}`;
+
+// Cache for live device data to prevent excessive API calls
+let liveDeviceCache = {
+  devices: [],
+  lastFetch: 0
+};
+const CACHE_TTL = 30000; // 30 seconds cache
+
+const updateLiveDeviceCache = async () => {
+  const now = Date.now();
+  if (now - liveDeviceCache.lastFetch <= CACHE_TTL && liveDeviceCache.devices.length > 0) return;
+
+  const liveDataPromises = [];
+  
+  // WeMo devices (fast - just reads in-memory map)
+  liveDataPromises.push(
+    axios.get(`${getBaseUrl()}/api/wemo/status/all`, { timeout: 2000 })
+      .then(resp => {
+        if (resp.data && resp.data.devices) {
+          return resp.data.devices.map(w => ({
+            id: `wemo_${w.host.replace(/\./g, '_')}`,
+            type: 'wemo',
+            name: w.friendlyName,
+            ip: w.host,
+            ipAddress: w.host,
+            model: w.modelName,
+            manufacturer: 'Belkin',
+            status: w.online ? 'online' : 'offline',
+            binaryState: w.binaryState,
+            lastSeen: new Date().toISOString()
+          }));
+        }
+        return [];
+      })
+      .catch(() => [])
+  );
+  
+  // Wait for all live data
+  const liveResults = await Promise.all(liveDataPromises);
+  
+  // Flatten results
+  liveDeviceCache.devices = liveResults.flat();
+  liveDeviceCache.lastFetch = now;
+};
+
 // Get all devices
 router.get('/', async (req, res) => {
   try {
-    const devices = await discovery.getAllDevices();
+    let devices = await discovery.getAllDevices();
+    
+    // Only filter out WeMo devices since we fetch those live (other types come from devices.json)
+    // WeMo live data is fast - just reads from in-memory map
+    const liveTypes = ['wemo-plug', 'wemo'];
+    devices = devices.filter(d => !liveTypes.some(t => d.type.toLowerCase().includes(t.toLowerCase())));
+    
+    // Update live cache
+    await updateLiveDeviceCache();
+    
+    // Combine cached file devices with live devices
+    devices = [...devices, ...liveDeviceCache.devices];
+    
     res.json(devices);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -37,7 +97,22 @@ router.delete('/clear', async (req, res) => {
 // Get device by ID
 router.get('/:id', async (req, res) => {
   try {
-    const device = await discovery.getDeviceById(req.params.id);
+    let device = await discovery.getDeviceById(req.params.id);
+    
+    // If not found in static file, check live cache (e.g. WeMo devices)
+    if (!device) {
+      // Check cache first
+      device = liveDeviceCache.devices.find(d => d.id === req.params.id);
+      
+      // If still not found and it looks like a WeMo ID, try to refresh cache
+      if (!device && req.params.id.startsWith('wemo_')) {
+         // Force refresh cache
+         liveDeviceCache.lastFetch = 0;
+         await updateLiveDeviceCache();
+         device = liveDeviceCache.devices.find(d => d.id === req.params.id);
+      }
+    }
+
     if (!device) {
       return res.status(404).json({ error: 'Device not found' });
     }
@@ -118,26 +193,81 @@ router.post('/quick-action', async (req, res) => {
     const { action } = req.body;
     const devices = await discovery.getAllDevices();
     const results = [];
+    const baseUrl = getBaseUrl();
+
+    // Helper function to control WeMo devices
+    const controlWemo = async (ip, state) => {
+      try {
+        await axios.post(`${baseUrl}/api/wemo/${ip}/power`, { state }, { timeout: 5000 });
+        return { success: true };
+      } catch (err) {
+        return { success: false, error: err.message };
+      }
+    };
+
+    // Helper function to control Sonos devices
+    const controlSonos = async (ip, command) => {
+      try {
+        await axios.post(`${baseUrl}/api/sonos/${ip}/${command}`, {}, { timeout: 5000 });
+        return { success: true };
+      } catch (err) {
+        return { success: false, error: err.message };
+      }
+    };
 
     switch (action) {
       case 'lights_off':
-        // Turn off all lights
+        // Turn off all lights (including WeMo LightSwitch and plugs)
         for (const device of devices) {
-          if (device.type?.toLowerCase().includes('light') || 
-              device.type?.toLowerCase().includes('bulb') ||
-              device.type?.toLowerCase().includes('hue')) {
-            results.push({ device: device.name, action: 'off', status: 'success' });
+          const isLight = device.type?.toLowerCase().includes('light') || 
+                         device.type?.toLowerCase().includes('bulb') ||
+                         device.type?.toLowerCase().includes('hue') ||
+                         device.type?.toLowerCase().includes('lifx') ||
+                         device.type?.toLowerCase().includes('nanoleaf');
+          const isWemo = device.type?.toLowerCase().includes('wemo');
+          
+          if (isLight || isWemo) {
+            const ip = device.ip || device.ipAddress;
+            if (isWemo && ip) {
+              const result = await controlWemo(ip, false);
+              results.push({ 
+                device: device.name, 
+                ip: ip,
+                action: 'off', 
+                status: result.success ? 'success' : 'failed',
+                error: result.error 
+              });
+            } else if (isLight) {
+              results.push({ device: device.name, action: 'off', status: 'success' });
+            }
           }
         }
         break;
 
       case 'lights_on':
-        // Turn on all lights
+        // Turn on all lights (including WeMo LightSwitch and plugs)
         for (const device of devices) {
-          if (device.type?.toLowerCase().includes('light') || 
-              device.type?.toLowerCase().includes('bulb') ||
-              device.type?.toLowerCase().includes('hue')) {
-            results.push({ device: device.name, action: 'on', status: 'success' });
+          const isLight = device.type?.toLowerCase().includes('light') || 
+                         device.type?.toLowerCase().includes('bulb') ||
+                         device.type?.toLowerCase().includes('hue') ||
+                         device.type?.toLowerCase().includes('lifx') ||
+                         device.type?.toLowerCase().includes('nanoleaf');
+          const isWemo = device.type?.toLowerCase().includes('wemo');
+          
+          if (isLight || isWemo) {
+            const ip = device.ip || device.ipAddress;
+            if (isWemo && ip) {
+              const result = await controlWemo(ip, true);
+              results.push({ 
+                device: device.name, 
+                ip: ip,
+                action: 'on', 
+                status: result.success ? 'success' : 'failed',
+                error: result.error 
+              });
+            } else if (isLight) {
+              results.push({ device: device.name, action: 'on', status: 'success' });
+            }
           }
         }
         break;
@@ -145,11 +275,25 @@ router.post('/quick-action', async (req, res) => {
       case 'music_stop':
         // Stop all music/speakers
         for (const device of devices) {
-          if (device.type?.toLowerCase().includes('speaker') || 
-              device.type?.toLowerCase().includes('sonos') ||
-              device.type?.toLowerCase().includes('alexa') ||
-              device.type?.toLowerCase().includes('google')) {
-            results.push({ device: device.name, action: 'stop', status: 'success' });
+          const isSpeaker = device.type?.toLowerCase().includes('speaker') || 
+                           device.type?.toLowerCase().includes('sonos') ||
+                           device.type?.toLowerCase().includes('alexa') ||
+                           device.type?.toLowerCase().includes('google');
+          
+          if (isSpeaker) {
+            const ip = device.ip || device.ipAddress;
+            if (device.type?.toLowerCase().includes('sonos') && ip) {
+              const result = await controlSonos(ip, 'stop');
+              results.push({ 
+                device: device.name, 
+                ip: ip,
+                action: 'stop', 
+                status: result.success ? 'success' : 'failed',
+                error: result.error 
+              });
+            } else {
+              results.push({ device: device.name, action: 'stop', status: 'pending' });
+            }
           }
         }
         break;
@@ -159,7 +303,7 @@ router.post('/quick-action', async (req, res) => {
         for (const device of devices) {
           if (device.type?.toLowerCase().includes('tv') || 
               device.type?.toLowerCase().includes('display')) {
-            results.push({ device: device.name, action: 'off', status: 'success' });
+            results.push({ device: device.name, action: 'off', status: 'pending' });
           }
         }
         break;

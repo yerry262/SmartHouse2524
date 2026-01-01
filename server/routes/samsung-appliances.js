@@ -37,8 +37,16 @@ router.get('/devices', async (req, res) => {
 
     const devices = response.data.items || [];
     
+    // Log discovery
+    if (global.activityLog && devices.length > 0) {
+      global.activityLog.discovery('Samsung Appliances', `Found ${devices.length} device(s)`);
+    }
+    
     res.json({ devices });
   } catch (error) {
+    if (global.activityLog) {
+      global.activityLog.error('Samsung Appliances', `Fetch failed: ${error.message}`);
+    }
     res.status(500).json({ 
       error: error.message,
       details: error.response?.data 

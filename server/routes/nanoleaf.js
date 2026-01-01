@@ -53,6 +53,11 @@ router.get('/discover', async (req, res) => {
       serialNo: device.nl_serial
     }));
 
+    // Log discovery
+    if (global.activityLog && formattedDevices.length > 0) {
+      global.activityLog.discovery('Nanoleaf', `Found ${formattedDevices.length} device(s)`, { devices: formattedDevices.map(d => d.name) });
+    }
+
     res.json({
       success: true,
       count: formattedDevices.length,
@@ -61,6 +66,9 @@ router.get('/discover', async (req, res) => {
     });
   } catch (error) {
     console.error('Error discovering Nanoleaf devices:', error);
+    if (global.activityLog) {
+      global.activityLog.error('Nanoleaf', `Discovery failed: ${error.message}`);
+    }
     res.status(500).json({ error: error.message });
   }
 });

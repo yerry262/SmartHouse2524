@@ -108,21 +108,12 @@ const Dashboard = ({ devices, onRefresh }) => {
   };
 
   return (
-    <Container maxWidth="xl">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-            Smart Home Dashboard
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Monitor and control all your devices in one place
-          </Typography>
-        </Box>
-
+    <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1, pt: 3 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
         {/* Device Stats */}
         <DeviceStats devices={devices} />
 
@@ -132,7 +123,18 @@ const Dashboard = ({ devices, onRefresh }) => {
         {/* Activity Log and Search */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} md={8}>
-            <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Box sx={{ 
+              mb: 3, 
+              display: 'flex', 
+              gap: 2, 
+              flexWrap: 'wrap', 
+              alignItems: 'center',
+              background: 'rgba(30, 35, 50, 0.6)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '16px',
+              p: 2,
+              border: '1px solid rgba(255, 255, 255, 0.05)'
+            }}>
               <TextField
                 placeholder="Search devices..."
                 value={searchQuery}
@@ -144,7 +146,7 @@ const Dashboard = ({ devices, onRefresh }) => {
               />
               <IconButton 
                 onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-                sx={{ border: '1px solid rgba(0,0,0,0.12)' }}
+                sx={{ border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
                 title={viewMode === 'grid' ? 'Switch to List View' : 'Switch to Grid View'}
               >
                 {viewMode === 'grid' ? <ViewListIcon /> : <ViewModuleIcon />}
@@ -154,7 +156,7 @@ const Dashboard = ({ devices, onRefresh }) => {
                 color="error"
                 startIcon={<DeleteSweepIcon />}
                 onClick={handleClearDevices}
-                sx={{ textTransform: 'none' }}
+                sx={{ textTransform: 'none', borderColor: 'rgba(244, 67, 54, 0.5)' }}
               >
                 Clear All
               </Button>
@@ -173,7 +175,7 @@ const Dashboard = ({ devices, onRefresh }) => {
                 variant="contained"
                 startIcon={<NetworkCheckIcon />}
                 onClick={handleNetworkScan}
-                sx={{ textTransform: 'none' }}
+                sx={{ textTransform: 'none', background: 'rgba(255,255,255,0.1)' }}
               >
                 Network Scan
               </Button>
@@ -181,7 +183,7 @@ const Dashboard = ({ devices, onRefresh }) => {
                 variant="outlined"
                 startIcon={<SortIcon />}
                 onClick={handleSortClick}
-                sx={{ textTransform: 'none' }}
+                sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.2)', color: '#fff' }}
               >
                 Sort: {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
               </Button>

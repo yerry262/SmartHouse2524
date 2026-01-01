@@ -19,7 +19,9 @@ const lightsMap = new Map();
 // Initialize client if available
 if (client) {
   client.on('light-new', (light) => {
-    console.log(`New LIFX light discovered: ${light.label || light.id}`);
+    if (global.activityLog) {
+      global.activityLog.discovery('LIFX', `Found: ${light.label || light.id}`, { ip: light.address });
+    }
     lightsMap.set(light.id, light);
     
     // Broadcast to WebSocket clients
@@ -36,12 +38,16 @@ if (client) {
   });
 
   client.on('light-offline', (light) => {
-    console.log(`LIFX light offline: ${light.label || light.id}`);
+    if (global.activityLog) {
+      global.activityLog.warning('LIFX', `${light.label || light.id} went offline`);
+    }
     lightsMap.delete(light.id);
   });
 
   client.on('light-online', (light) => {
-    console.log(`LIFX light online: ${light.label || light.id}`);
+    if (global.activityLog) {
+      global.activityLog.network('LIFX', `${light.label || light.id} came online`);
+    }
     lightsMap.set(light.id, light);
   });
 
@@ -207,8 +213,14 @@ router.post('/lights/:id/on', async (req, res) => {
 
     light.on(duration || 0, (err) => {
       if (err) {
+        if (global.activityLog) {
+          global.activityLog.error('LIFX', `On failed (${light.label || light.id}): ${err.message}`);
+        }
         res.status(500).json({ error: err.message });
       } else {
+        if (global.activityLog) {
+          global.activityLog.action('LIFX', `💡 On: ${light.label || light.id}`);
+        }
         res.json({
           success: true,
           message: 'Light turned on',
@@ -237,8 +249,14 @@ router.post('/lights/:id/off', async (req, res) => {
 
     light.off(duration || 0, (err) => {
       if (err) {
+        if (global.activityLog) {
+          global.activityLog.error('LIFX', `Off failed (${light.label || light.id}): ${err.message}`);
+        }
         res.status(500).json({ error: err.message });
       } else {
+        if (global.activityLog) {
+          global.activityLog.action('LIFX', `🔌 Off: ${light.label || light.id}`);
+        }
         res.json({
           success: true,
           message: 'Light turned off',

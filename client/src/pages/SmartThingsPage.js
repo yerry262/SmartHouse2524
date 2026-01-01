@@ -33,8 +33,14 @@ import {
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import { useAccounts } from '../contexts/AccountContext';
+import AccountRequiredPrompt from '../components/AccountRequiredPrompt';
 
 const SmartThingsPage = () => {
+  const { isAccountLinked, getAccountData } = useAccounts();
+  const isLinked = isAccountLinked('smartthings');
+  const accountData = getAccountData('smartthings');
+  
   const [devices, setDevices] = useState([]);
   const [locations, setLocations] = useState([]);
   const [rooms, setRooms] = useState([]);
@@ -53,9 +59,11 @@ const SmartThingsPage = () => {
   const [apiTestTimestamp, setApiTestTimestamp] = useState(null);
 
   useEffect(() => {
-    discoverDevices();
-    getLocations();
-  }, []);
+    if (isLinked) {
+      discoverDevices();
+      getLocations();
+    }
+  }, [isLinked]);
 
   const discoverDevices = async () => {
     setLoading(true);
@@ -179,7 +187,7 @@ const SmartThingsPage = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="xl" sx={{ pt: 3, mb: 4 }}>
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -189,67 +197,79 @@ const SmartThingsPage = () => {
           <Typography variant="h4" component="h1" fontWeight="bold">
             Samsung SmartThings
           </Typography>
-          <Box>
-            <Button
-              variant="contained"
-              startIcon={<RefreshIcon />}
-              onClick={discoverDevices}
-              disabled={loading}
-              sx={{ mr: 2 }}
-            >
-              {loading ? 'Discovering...' : 'Discover Devices'}
-            </Button>
-          </Box>
+          {isLinked && (
+            <Box>
+              <Button
+                variant="contained"
+                startIcon={<RefreshIcon />}
+                onClick={discoverDevices}
+                disabled={loading}
+                sx={{ mr: 2 }}
+              >
+                {loading ? 'Discovering...' : 'Discover Devices'}
+              </Button>
+            </Box>
+          )}
         </Box>
 
-        {devices.length === 0 && !loading && (
-          <Alert severity="info" sx={{ mb: 3 }}>
-            No SmartThings devices found. Make sure your SMARTTHINGS_TOKEN is configured in the environment variables.
-          </Alert>
-        )}
+        {/* Account Required Prompt */}
+        <AccountRequiredPrompt 
+          providerId="smartthings"
+          title="Connect Samsung SmartThings"
+          description="Sign in to your SmartThings account or enter your API token to control all your SmartThings hub devices, sensors, and automations."
+        />
 
-        <Grid container spacing={3}>
-          {devices.map((device) => (
-            <Grid item xs={12} sm={6} md={4} key={device.id}>
-              <motion.div variants={itemVariants}>
-                <Card 
-                  sx={{ 
-                    height: '100%',
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: 4
-                    }
-                  }}
-                  onClick={() => setSelectedDevice(device)}
-                >
-                  <CardContent>
-                    <Box display="flex" alignItems="center" mb={2}>
-                      <Box mr={2} color="primary.main">
-                        {getDeviceIcon(device)}
-                      </Box>
-                      <Box flex={1}>
-                        <Typography variant="h6" component="h3" noWrap>
-                          {device.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" noWrap>
-                          {device.manufacturer} • {device.model}
-                        </Typography>
-                      </Box>
-                    </Box>
+        {isLinked && (
+          <>
+            {devices.length === 0 && !loading && (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                No SmartThings devices found. Make sure your SmartThings API token is valid.
+                {accountData?.apiToken && ' Token is configured.'}
+              </Alert>
+            )}
 
-                    <Box mb={2}>
-                      {getCapabilityChips(device)}
-                      {device.capabilities.length > 3 && (
-                        <Chip 
-                          label={`+${device.capabilities.length - 3} more`}
-                          size="small"
-                          variant="outlined"
-                          color="primary"
-                        />
-                      )}
-                    </Box>
+            <Grid container spacing={3}>
+              {devices.map((device) => (
+                <Grid item xs={12} sm={6} md={4} key={device.id}>
+                  <motion.div variants={itemVariants}>
+                    <Card 
+                      sx={{ 
+                        height: '100%',
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: 4
+                        }
+                      }}
+                      onClick={() => setSelectedDevice(device)}
+                    >
+                      <CardContent>
+                        <Box display="flex" alignItems="center" mb={2}>
+                          <Box mr={2} color="primary.main">
+                            {getDeviceIcon(device)}
+                          </Box>
+                          <Box flex={1}>
+                            <Typography variant="h6" component="h3" noWrap>
+                              {device.name}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" noWrap>
+                              {device.manufacturer} • {device.model}
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        <Box mb={2}>
+                          {getCapabilityChips(device)}
+                          {device.capabilities.length > 3 && (
+                            <Chip 
+                              label={`+${device.capabilities.length - 3} more`}
+                              size="small"
+                              variant="outlined"
+                              color="primary"
+                            />
+                          )}
+                        </Box>
 
                     <Box display="flex" justifyContent="space-between" alignItems="center">
                       <Chip
@@ -379,6 +399,8 @@ const SmartThingsPage = () => {
             </Button>
           </DialogActions>
         </Dialog>
+          </>
+        )}
       </motion.div>
     </Container>
   );

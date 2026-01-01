@@ -43,6 +43,9 @@ router.post('/add-inverter', (req, res) => {
     inverters[existingIndex] = inverter;
   } else {
     inverters.push(inverter);
+    if (global.activityLog) {
+      global.activityLog.device('Aurora', `Added inverter: ${inverter.name} (${ip})`);
+    }
   }
 
   res.json({ success: true, inverter });

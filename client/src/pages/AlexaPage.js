@@ -29,8 +29,14 @@ import RecordVoiceOverIcon from '@mui/icons-material/RecordVoiceOver';
 import ApiIcon from '@mui/icons-material/Api';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import { useAccounts } from '../contexts/AccountContext';
+import AccountRequiredPrompt from '../components/AccountRequiredPrompt';
 
 const AlexaPage = () => {
+  const { isAccountLinked, getAccountData } = useAccounts();
+  const isLinked = isAccountLinked('amazon');
+  const accountData = getAccountData('amazon');
+  
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -45,8 +51,10 @@ const AlexaPage = () => {
   const [apiTestTimestamp, setApiTestTimestamp] = useState(null);
 
   useEffect(() => {
-    loadDevices();
-  }, []);
+    if (isLinked) {
+      loadDevices();
+    }
+  }, [isLinked]);
 
   const loadDevices = async () => {
     setLoading(true);
@@ -145,7 +153,7 @@ const AlexaPage = () => {
   };
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth="lg" sx={{ pt: 3 }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -160,32 +168,35 @@ const AlexaPage = () => {
               Control your Echo devices, speakers, and smart displays
             </Typography>
           </div>
-          <Button
-            variant="contained"
-            startIcon={<RefreshIcon />}
-            onClick={loadDevices}
-            disabled={loading}
-          >
-            {loading ? 'Loading...' : 'Refresh'}
-          </Button>
+          {isLinked && (
+            <Button
+              variant="contained"
+              startIcon={<RefreshIcon />}
+              onClick={loadDevices}
+              disabled={loading}
+            >
+              {loading ? 'Loading...' : 'Refresh'}
+            </Button>
+          )}
         </Box>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
+        {/* Account Required Prompt */}
+        <AccountRequiredPrompt 
+          providerId="amazon"
+          title="Connect Amazon Alexa"
+          description="Sign in to your Amazon account to import and control your Echo devices, smart plugs, and other Alexa-connected devices."
+        />
 
-        <Card sx={{ mb: 3, background: 'rgba(255, 153, 0, 0.1)' }}>
-          <CardContent>
-            <Typography variant="body2" color="text.secondary">
-              📧 Amazon Alexa requires your account credentials in the .env file (ALEXA_EMAIL and ALEXA_PASSWORD).
-              Note: This uses an unofficial API and may require 2FA setup.
-            </Typography>
-          </CardContent>
-        </Card>
+        {/* Only show content when account is linked */}
+        {isLinked && (
+          <>
+            {error && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {error}
+              </Alert>
+            )}
 
-        <Grid container spacing={3}>
+            <Grid container spacing={3}>
           {/* Device List */}
           <Grid item xs={12} md={4}>
             <Card>
@@ -413,6 +424,8 @@ const AlexaPage = () => {
             </Box>
           )}
         </Paper>
+          </>
+        )}
       </motion.div>
     </Container>
   );

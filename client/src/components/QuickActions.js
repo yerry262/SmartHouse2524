@@ -15,6 +15,9 @@ import {
   FormControlLabel,
   Chip,
   Alert,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
 import {
   LightbulbOutlined,
@@ -23,6 +26,7 @@ import {
   Tv,
   Save,
   Add,
+  ExpandMore,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import axios from 'axios';
@@ -94,16 +98,26 @@ const QuickActions = () => {
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  Quick Actions
-                </Typography>
-              </Box>
+          <Accordion 
+            defaultExpanded 
+            sx={{ 
+              background: 'rgba(25, 28, 38, 0.95)', 
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '16px !important',
+              '&:before': { display: 'none' },
+              color: '#fff'
+            }}
+          >
+            <AccordionSummary expandIcon={<ExpandMore sx={{ color: '#fff' }} />}>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                Quick Actions
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
               <Grid container spacing={2}>
                 {quickActions.map((action, index) => (
-                  <Grid item xs={6} key={index}>
+                  <Grid item xs={6} sm={6} key={index}>
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button
                         fullWidth
@@ -123,25 +137,42 @@ const QuickActions = () => {
                   </Grid>
                 ))}
               </Grid>
-            </CardContent>
-          </Card>
+            </AccordionDetails>
+          </Accordion>
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Accordion 
+            defaultExpanded
+            sx={{ 
+              background: 'rgba(25, 28, 38, 0.95)', 
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '16px !important',
+              '&:before': { display: 'none' },
+              color: '#fff'
+            }}
+          >
+            <AccordionSummary expandIcon={<ExpandMore sx={{ color: '#fff' }} />}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', pr: 2 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
                   Scenes
                 </Typography>
                 <Button
                   startIcon={<Add />}
                   size="small"
-                  onClick={() => setOpenDialog(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenDialog(true);
+                  }}
+                  sx={{ color: '#fff', borderColor: 'rgba(255,255,255,0.3)' }}
+                  variant="outlined"
                 >
                   Add Scene
                 </Button>
               </Box>
+            </AccordionSummary>
+            <AccordionDetails>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {scenes.map((scene) => (
                   <motion.div key={scene.id} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -163,8 +194,8 @@ const QuickActions = () => {
                   </motion.div>
                 ))}
               </Box>
-            </CardContent>
-          </Card>
+            </AccordionDetails>
+          </Accordion>
         </Grid>
       </Grid>
 

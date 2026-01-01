@@ -30,8 +30,13 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import { useAccounts } from '../contexts/AccountContext';
+import AccountRequiredPrompt from '../components/AccountRequiredPrompt';
 
 const GoogleHomePage = () => {
+  const { isAccountLinked } = useAccounts();
+  const isLinked = isAccountLinked('google');
+  
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [discovering, setDiscovering] = useState(false);
@@ -42,8 +47,10 @@ const GoogleHomePage = () => {
   const [packageInstalled, setPackageInstalled] = useState(true);
 
   useEffect(() => {
-    fetchDevices();
-  }, []);
+    if (isLinked) {
+      fetchDevices();
+    }
+  }, [isLinked]);
 
   const fetchDevices = async () => {
     setLoading(true);
@@ -135,7 +142,7 @@ const GoogleHomePage = () => {
 
   if (!packageInstalled) {
     return (
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <Container maxWidth="lg" sx={{ pt: 3 }}>
         <Alert severity="warning" sx={{ mb: 3 }}>
           <Typography variant="h6">Google Home Package Not Installed</Typography>
           <Typography variant="body2" sx={{ mt: 1 }}>
@@ -161,7 +168,7 @@ const GoogleHomePage = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
+    <Container maxWidth="lg" sx={{ pt: 3 }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -174,43 +181,57 @@ const GoogleHomePage = () => {
               Google Home & Nest
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={() => setAddDialogOpen(true)}
-            >
-              Add Device
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={discovering ? <CircularProgress size={20} /> : <Refresh />}
-              onClick={discoverDevices}
-              disabled={discovering}
-            >
-              {discovering ? 'Discovering...' : 'Discover'}
-            </Button>
-          </Box>
+          {isLinked && (
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => setAddDialogOpen(true)}
+              >
+                Add Device
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={discovering ? <CircularProgress size={20} /> : <Refresh />}
+                onClick={discoverDevices}
+                disabled={discovering}
+              >
+                {discovering ? 'Discovering...' : 'Discover'}
+              </Button>
+            </Box>
+          )}
         </Box>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
-            {error}
-          </Alert>
-        )}
+        {/* Account Required Prompt */}
+        <AccountRequiredPrompt 
+          providerId="google"
+          title="Connect Google Home"
+          description="Sign in to your Google account to discover and control your Chromecast, Google Home speakers, and Nest smart displays."
+          showLocalOption={true}
+          onTryLocal={discoverDevices}
+          localOptionText="Try Local mDNS Discovery"
+        />
 
-        {success && (
-          <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess('')}>
-            {success}
-          </Alert>
-        )}
+        {isLinked && (
+          <>
+            {error && (
+              <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
+                {error}
+              </Alert>
+            )}
 
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : devices.length === 0 ? (
-          <Card>
+            {success && (
+              <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess('')}>
+                {success}
+              </Alert>
+            )}
+
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : devices.length === 0 ? (
+              <Card>
             <CardContent sx={{ textAlign: 'center', py: 6 }}>
               <Home sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
               <Typography variant="h6" color="text.secondary">
@@ -274,6 +295,8 @@ const GoogleHomePage = () => {
             </Button>
           </DialogActions>
         </Dialog>
+          </>
+        )}
       </motion.div>
     </Container>
   );

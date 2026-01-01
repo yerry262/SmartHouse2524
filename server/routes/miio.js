@@ -24,9 +24,15 @@ if (miio) {
 
   devicesManager.on('available', reg => {
     console.log(`miio device discovered: ${reg.id}`);
+    if (global.activityLog) {
+      global.activityLog.discovery('miio', `Device discovered: ${reg.id}`);
+    }
     
     if (!reg.token) {
       console.log(`Device ${reg.id} hides its token - manual configuration needed`);
+      if (global.activityLog) {
+        global.activityLog.warning('miio', `Device ${reg.id} requires manual token`);
+      }
       discoveredDevices.set(reg.id, {
         id: reg.id,
         address: reg.address,
@@ -49,11 +55,17 @@ if (miio) {
 
   devicesManager.on('unavailable', reg => {
     console.log(`miio device unavailable: ${reg.id}`);
+    if (global.activityLog) {
+      global.activityLog.warning('miio', `Device unavailable: ${reg.id}`);
+    }
     discoveredDevices.delete(reg.id);
   });
 
   devicesManager.on('error', err => {
     console.error('miio device error:', err);
+    if (global.activityLog) {
+      global.activityLog.error('miio', `Device error: ${err.message || err}`);
+    }
   });
 }
 

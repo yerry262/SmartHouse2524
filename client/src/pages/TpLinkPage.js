@@ -135,7 +135,7 @@ const TpLinkPage = () => {
   const bulbs = devices.filter(d => d.deviceType === 'bulb');
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="xl" sx={{ pt: 3, mb: 4 }}>
       <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <PowerIcon sx={{ fontSize: 40, color: '#00BFA5' }} />
         TP-Link Kasa

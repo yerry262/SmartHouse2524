@@ -15,7 +15,7 @@ const atvremotePath = process.platform === 'win32'
   : 'atvremote';
 
 // Check by trying to scan (--version returns exit code 1)
-execPromise(`${atvremotePath} scan`, { timeout: 3000 }).then(() => {
+execPromise(`${atvremotePath} scan`, { timeout: 3000, windowsHide: true }).then(() => {
   pyatvInstalled = true;
   console.log('✅ pyatv is installed');
 }).catch((err) => {
@@ -66,45 +66,108 @@ const discoverAppleTVs = async () => {
   // Also try pyatv scan if installed
   if (pyatvInstalled) {
     try {
-      const { stdout } = await execPromise('atvremote scan', { timeout: 15000 });
-      // Parse pyatv scan output - each device block is separated by blank lines
-      const deviceBlocks = stdout.split('\n\n').filter(block => block.includes('Name:'));
+      const { stdout } = await execPromise('atvremote scan', { timeout: 20000, windowsHide: true });
+      // Parse pyatv scan output - split by lines that start with "Name:"
+      // This handles devices separated by varying amounts of whitespace
+      const lines = stdout.split('\n');
+      let currentDevice = null;
+      const parsedDevices = [];
       
-      for (const block of deviceBlocks) {
-        const lines = block.split('\n');
-        let name = '', ip = '', model = '', mac = '';
+      for (const line of lines) {
+        const trimmed = line.trim();
         
-        for (const line of lines) {
-          if (line.includes('Name:')) {
-            name = line.split('Name:')[1]?.trim() || '';
-          } else if (line.includes('Address:')) {
-            ip = line.split('Address:')[1]?.trim() || '';
-          } else if (line.includes('Model/SW:')) {
-            model = line.split('Model/SW:')[1]?.trim() || '';
-          } else if (line.includes('MAC:')) {
-            mac = line.split('MAC:')[1]?.trim() || '';
+        if (trimmed.startsWith('Name:')) {
+          // Start of a new device - save previous if exists
+          if (currentDevice && currentDevice.name && currentDevice.ip) {
+            parsedDevices.push(currentDevice);
+          }
+          currentDevice = {
+            name: trimmed.split('Name:')[1]?.trim() || '',
+            ip: '',
+            model: '',
+            mac: ''
+          };
+        } else if (currentDevice) {
+          if (trimmed.startsWith('Address:')) {
+            currentDevice.ip = trimmed.split('Address:')[1]?.trim() || '';
+          } else if (trimmed.startsWith('Model/SW:')) {
+            currentDevice.model = trimmed.split('Model/SW:')[1]?.trim() || '';
+          } else if (trimmed.startsWith('MAC:')) {
+            currentDevice.mac = trimmed.split('MAC:')[1]?.trim() || '';
           }
         }
-        
-        // Only add actual Apple TVs (not Macs or speakers)
-        if (ip && name && model.toLowerCase().includes('apple tv')) {
-          // Check if not already in list
-          if (!devices.find(d => d.ip === ip)) {
-            devices.push({
-              id: `appletv_${ip.replace(/\./g, '_')}`,
-              name,
-              ip,
-              type: 'appletv',
-              model,
-              mac,
-              discoveredBy: 'pyatv',
-            });
+      }
+      // Don't forget the last device
+      if (currentDevice && currentDevice.name && currentDevice.ip) {
+        parsedDevices.push(currentDevice);
+      }
+      
+      // Now filter the parsed devices
+      for (const { name, ip, model, mac } of parsedDevices) {
+        // Only add actual Apple TVs (not Macs, HomePods, or speakers)
+        if (ip && name) {
+          // Filter out Macs and other AirPlay devices
+          const isAppleTV = model && (
+            model.toLowerCase().includes('apple tv') || 
+            model.toLowerCase().includes('appletv') ||
+            model.toLowerCase().startsWith('gen') // Gen4K, Gen3, etc
+          );
+          
+          // Skip if it's clearly not an Apple TV
+          const isMac = model && (
+            model.toLowerCase().includes('mac') ||
+            model.toLowerCase().includes('imac') ||
+            model.toLowerCase().includes('macbook')
+          );
+          
+          const isHomePod = name.toLowerCase().includes('homepod');
+          
+          if (isAppleTV && !isMac && !isHomePod) {
+            // Check if not already in list
+            if (!devices.find(d => d.ip === ip)) {
+              // Try to get hostname from stored devices
+              let hostname = null;
+              try {
+                const fs = require('fs');
+                const path = require('path');
+                const devicesPath = path.join(__dirname, '../data/devices.json');
+                if (fs.existsSync(devicesPath)) {
+                  const storedDevices = JSON.parse(fs.readFileSync(devicesPath, 'utf8'));
+                  const storedDevice = storedDevices.find(d => 
+                    d.ip === ip || 
+                    (d.metadata && d.metadata.addresses && d.metadata.addresses.includes(ip))
+                  );
+                  if (storedDevice && storedDevice.hostname) {
+                    hostname = storedDevice.hostname;
+                  }
+                }
+              } catch (err) {
+                // Ignore errors reading stored devices
+              }
+              
+              devices.push({
+                id: `appletv_${ip.replace(/\./g, '_')}`,
+                name,
+                ip,
+                type: 'appletv',
+                model,
+                mac,
+                hostname,
+                discoveredBy: 'pyatv',
+              });
+            }
           }
         }
       }
       console.log(`Apple TV: Discovered ${devices.length} devices via pyatv`);
+      if (global.activityLog && devices.length > 0) {
+        global.activityLog.discovery('Apple TV', `Discovered ${devices.length} device(s) via pyatv`);
+      }
     } catch (error) {
       console.log('pyatv scan error:', error.message);
+      if (global.activityLog) {
+        global.activityLog.warning('Apple TV', `pyatv scan failed: ${error.message}`);
+      }
     }
   }
   
@@ -171,7 +234,7 @@ router.get('/devices/:id/status', async (req, res) => {
     }
     
     // Use pyatv to get status
-    const { stdout } = await execPromise(`atvremote -s ${device.ip} playing`, { timeout: 5000 });
+    const { stdout } = await execPromise(`atvremote -s ${device.ip} playing`, { timeout: 5000, windowsHide: true });
     
     res.json({ 
       device: device.name,
@@ -195,7 +258,7 @@ router.get('/:ip/status', async (req, res) => {
     if (!deviceInfo) {
       // Do a quick scan to get device info
       try {
-        const { stdout: scanOutput } = await execPromise('atvremote scan', { timeout: 15000 });
+        const { stdout: scanOutput } = await execPromise('atvremote scan', { timeout: 15000, windowsHide: true });
         // Mark pyatv as installed since the command worked
         pyatvInstalled = true;
         
@@ -238,7 +301,7 @@ router.get('/:ip/status', async (req, res) => {
     // Try to get playing status
     let playingStatus = null;
     try {
-      const { stdout: playingOutput } = await execPromise(`atvremote -s ${ip} playing`, { timeout: 10000 });
+      const { stdout: playingOutput } = await execPromise(`atvremote -s ${ip} playing`, { timeout: 10000, windowsHide: true });
       playingStatus = playingOutput;
     } catch (playError) {
       // Device may require pairing
@@ -250,7 +313,8 @@ router.get('/:ip/status', async (req, res) => {
       device: {
         name: deviceInfo?.name || 'Apple TV',
         model: deviceInfo?.model || 'Unknown',
-        mac: deviceInfo?.mac || null
+        mac: deviceInfo?.mac || null,
+        hostname: deviceInfo?.hostname || null
       },
       playing: playingStatus,
       online: true,
@@ -258,6 +322,97 @@ router.get('/:ip/status', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message, ip: req.params.ip });
+  }
+});
+
+// Start pairing with Apple TV
+router.post('/:ip/pair', async (req, res) => {
+  try {
+    const { ip } = req.params;
+    
+    if (!pyatvInstalled) {
+      return res.status(503).json({ 
+        error: 'pyatv not installed',
+        message: 'Install pyatv: pip install pyatv'
+      });
+    }
+    
+    // Start pairing process - this will show a PIN on the Apple TV
+    const { stdout } = await execPromise(`atvremote -s ${ip} pair`, { timeout: 30000, windowsHide: true });
+    
+    if (global.activityLog) {
+      global.activityLog.action('Apple TV', `Pairing started with ${ip}`);
+    }
+    
+    res.json({ 
+      success: true,
+      message: 'Pairing started - check your Apple TV for PIN',
+      output: stdout,
+      ip
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: error.message,
+      message: 'Pairing failed - make sure Apple TV is on and accessible'
+    });
+  }
+});
+
+// Send command to Apple TV
+router.post('/:ip/command', async (req, res) => {
+  try {
+    const { ip } = req.params;
+    const { command } = req.body;
+    
+    if (!pyatvInstalled) {
+      return res.status(503).json({ 
+        error: 'pyatv not installed',
+        message: 'Install pyatv: pip install pyatv'
+      });
+    }
+    
+    if (!command) {
+      return res.status(400).json({ error: 'Command is required' });
+    }
+    
+    // Map common commands to pyatv commands
+    const commandMap = {
+      'up': 'up',
+      'down': 'down',
+      'left': 'left',
+      'right': 'right',
+      'select': 'select',
+      'menu': 'menu',
+      'home': 'home',
+      'play': 'play',
+      'pause': 'pause',
+      'play_pause': 'play_pause',
+      'stop': 'stop',
+      'next': 'next',
+      'previous': 'previous',
+      'volume_up': 'volume_up',
+      'volume_down': 'volume_down'
+    };
+    
+    const atvCommand = commandMap[command.toLowerCase()];
+    if (!atvCommand) {
+      return res.status(400).json({ error: `Unknown command: ${command}` });
+    }
+    
+    // Send command via atvremote
+    await execPromise(`atvremote -s ${ip} ${atvCommand}`, { timeout: 5000, windowsHide: true });
+    
+    if (global.activityLog) {
+      global.activityLog.action('Apple TV', `Sent ${command} to ${ip}`);
+    }
+    
+    res.json({ 
+      success: true,
+      command: atvCommand,
+      ip
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

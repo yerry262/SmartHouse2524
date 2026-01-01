@@ -33,12 +33,22 @@ function getTVConnection(ip) {
   tvConnections.set(ip, tv);
 
   tv.on('error', (err) => {
-    console.log(`LG TV ${ip} error:`, err.message);
+    if (global.activityLog) {
+      global.activityLog.error('LG TV', `${ip}: ${err.message}`);
+    }
   });
 
   tv.on('close', () => {
-    console.log(`LG TV ${ip} connection closed`);
+    if (global.activityLog) {
+      global.activityLog.network('LG TV', `${ip} disconnected`);
+    }
     tvConnections.delete(ip);
+  });
+
+  tv.on('connect', () => {
+    if (global.activityLog) {
+      global.activityLog.success('LG TV', `Connected to ${ip}`);
+    }
   });
 
   return tv;

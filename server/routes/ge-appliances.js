@@ -64,8 +64,16 @@ router.get('/appliances', async (req, res) => {
       details: app
     }));
     
+    // Log discovery
+    if (global.activityLog && formatted.length > 0) {
+      global.activityLog.discovery('GE Appliances', `Found ${formatted.length} appliance(s)`);
+    }
+    
     res.json({ appliances: formatted });
   } catch (error) {
+    if (global.activityLog) {
+      global.activityLog.error('GE Appliances', `Fetch failed: ${error.message}`);
+    }
     res.status(500).json({ error: error.message });
   }
 });

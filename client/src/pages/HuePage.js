@@ -218,7 +218,7 @@ const HuePage = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="xl" sx={{ pt: 3, mb: 4 }}>
       <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <LightbulbIcon sx={{ fontSize: 40, color: '#FFB300' }} />
         Philips Hue

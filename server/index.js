@@ -10,20 +10,28 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+// Activity Logger
+const activityLogger = require('./services/activityLogger');
+global.activityLog = activityLogger;
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 
 // WebSocket connection for real-time updates
 wss.on('connection', (ws) => {
-  console.log('New WebSocket connection established');
+  console.log('WebSocket: New client connected');
+  
+  // Send recent logs to new client
+  const recentLogs = activityLogger.getRecentLogs(20);
+  ws.send(JSON.stringify({ type: 'activity_log_history', logs: recentLogs }));
   
   ws.on('message', (message) => {
     console.log('Received:', message);
   });
   
   ws.on('close', () => {
-    console.log('WebSocket connection closed');
+    console.log('WebSocket: Client disconnected');
   });
 });
 
@@ -86,6 +94,12 @@ app.use('/api/ge-appliances', geAppliancesRoutes);
 app.use('/api/samsung-appliances', samsungAppliancesRoutes);
 app.use('/api/smartthings', smartThingsRoutes);
 
+// Activity Log API
+app.get('/api/activity', (req, res) => {
+  const count = parseInt(req.query.count) || 50;
+  res.json({ logs: activityLogger.getRecentLogs(count) });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -94,6 +108,6 @@ app.get('/api/health', (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
-  console.log(`🚀 SmartHouse server running on port ${PORT}`);
-  console.log(`📡 WebSocket server running on ws://localhost:${PORT}`);
+  activityLogger.success('Server', `SmartHouse server running on port ${PORT}`);
+  activityLogger.info('Server', `WebSocket server running on ws://localhost:${PORT}`);
 });

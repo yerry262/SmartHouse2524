@@ -4,9 +4,14 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
 
+// Context
+import { AccountProvider, useAccounts } from './contexts/AccountContext';
+
 // Components
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
+import AccountsPanel from './components/AccountsPanel';
+import ParticlesBackground from './components/ParticlesBackground';
 import Dashboard from './pages/Dashboard';
 import SonosPage from './pages/SonosPage';
 import AppleTVPage from './pages/AppleTVPage';
@@ -119,51 +124,90 @@ function App() {
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
-      <Router>
-        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-          <Navbar toggleSidebar={toggleSidebar} wsConnected={wsConnected} />
-          <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} devices={devices} />
-          
-          <Box
-            component="main"
-            sx={{
-              flexGrow: 1,
-              pt: '80px',
-              px: { xs: 2, md: 4 },
-              pb: 4,
-              width: '100%',
-            }}
-          >
-            <Routes>
-              <Route path="/" element={<Dashboard devices={devices} onRefresh={fetchDevices} />} />
-              <Route path="/sonos" element={<SonosPage />} />
-              <Route path="/appletv" element={<AppleTVPage />} />
-              <Route path="/samsung" element={<SamsungPage />} />
-              <Route path="/lg" element={<LGPage />} />
-              <Route path="/ring" element={<RingPage />} />
-              <Route path="/cameras" element={<CamerasPage />} />
-              <Route path="/eero" element={<EeroPage />} />
-              <Route path="/hue" element={<HuePage />} />
-              <Route path="/tplink" element={<TpLinkPage />} />
-              <Route path="/lifx" element={<LIFXPage />} />
-              <Route path="/nanoleaf" element={<NanoleafPage />} />
-              <Route path="/wyze" element={<WyzePage />} />
-              <Route path="/miio" element={<MiioPage />} />
-              <Route path="/alexa" element={<AlexaPage />} />
-              <Route path="/google-home" element={<GoogleHomePage />} />
-              <Route path="/aurora" element={<AuroraPage />} />
-              <Route path="/wemo" element={<WemoPage />} />
-              <Route path="/epson" element={<EpsonPage />} />
-              <Route path="/samsung-washer" element={<SamsungWasherPage />} />
-              <Route path="/ge-appliances" element={<GEAppliancesPage />} />
-              <Route path="/samsung-appliances" element={<SamsungAppliancesPage />} />
-              <Route path="/smartthings" element={<SmartThingsPage />} />
-              <Route path="/device/:id" element={<DeviceDetails />} />
-            </Routes>
-          </Box>
-        </Box>
-      </Router>
+      <AccountProvider>
+        <AppContent 
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          toggleSidebar={toggleSidebar}
+          devices={devices}
+          wsConnected={wsConnected}
+          fetchDevices={fetchDevices}
+        />
+      </AccountProvider>
     </ThemeProvider>
+  );
+}
+
+// Inner component that can use the AccountContext
+function AppContent({ sidebarOpen, setSidebarOpen, toggleSidebar, devices, wsConnected, fetchDevices }) {
+  const { 
+    linkedAccounts, 
+    linkAccount, 
+    unlinkAccount, 
+    accountsPanelOpen, 
+    closeAccountsPanel, 
+    toggleAccountsPanel,
+    linkedCount 
+  } = useAccounts();
+
+  return (
+    <Router>
+      <ParticlesBackground />
+      <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+        <Navbar 
+          toggleSidebar={toggleSidebar} 
+          toggleAccountsPanel={toggleAccountsPanel}
+          wsConnected={wsConnected} 
+          linkedAccountsCount={linkedCount}
+        />
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} devices={devices} />
+        <AccountsPanel 
+          open={accountsPanelOpen} 
+          onClose={closeAccountsPanel}
+          linkedAccounts={linkedAccounts}
+          onLinkAccount={linkAccount}
+          onUnlinkAccount={unlinkAccount}
+        />
+        
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            pt: '64px',
+            px: { xs: 2, md: 4 },
+            pb: 4,
+            width: '100%',
+          }}
+        >
+          <Routes>
+            <Route path="/" element={<Dashboard devices={devices} onRefresh={fetchDevices} />} />
+            <Route path="/sonos" element={<SonosPage />} />
+            <Route path="/appletv" element={<AppleTVPage />} />
+            <Route path="/samsung" element={<SamsungPage />} />
+            <Route path="/lg" element={<LGPage />} />
+            <Route path="/ring" element={<RingPage />} />
+            <Route path="/cameras" element={<CamerasPage />} />
+            <Route path="/eero" element={<EeroPage />} />
+            <Route path="/hue" element={<HuePage />} />
+            <Route path="/tplink" element={<TpLinkPage />} />
+            <Route path="/lifx" element={<LIFXPage />} />
+            <Route path="/nanoleaf" element={<NanoleafPage />} />
+            <Route path="/wyze" element={<WyzePage />} />
+            <Route path="/miio" element={<MiioPage />} />
+            <Route path="/alexa" element={<AlexaPage />} />
+            <Route path="/google-home" element={<GoogleHomePage />} />
+            <Route path="/aurora" element={<AuroraPage />} />
+            <Route path="/wemo" element={<WemoPage />} />
+            <Route path="/epson" element={<EpsonPage />} />
+            <Route path="/samsung-washer" element={<SamsungWasherPage />} />
+            <Route path="/ge-appliances" element={<GEAppliancesPage />} />
+            <Route path="/samsung-appliances" element={<SamsungAppliancesPage />} />
+            <Route path="/smartthings" element={<SmartThingsPage />} />
+            <Route path="/device/:id" element={<DeviceDetails />} />
+          </Routes>
+        </Box>
+      </Box>
+    </Router>
   );
 }
 

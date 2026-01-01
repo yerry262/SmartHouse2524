@@ -79,32 +79,32 @@ const WemoPage = () => {
 
   const togglePower = async (host, currentState) => {
     try {
+      // Convert string binaryState to boolean
+      const isCurrentlyOn = currentState === 1 || currentState === '1';
+      const newState = !isCurrentlyOn;
+      
       // Optimistic update
       setDevices(devices.map(d => 
-        d.host === host ? { ...d, binaryState: !currentState } : d
+        d.host === host ? { ...d, binaryState: newState ? 1 : 0 } : d
       ));
 
       const response = await fetch(`/api/wemo/${host}/power`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ state: !currentState })
+        body: JSON.stringify({ state: newState })
       });
       
       const data = await response.json();
       
       if (!data.success) {
         // Revert on failure
-        setDevices(devices.map(d => 
-          d.host === host ? { ...d, binaryState: currentState } : d
-        ));
+        await discoverDevices();
         console.error('Failed to toggle power:', data.error);
       }
     } catch (err) {
       console.error('Failed to toggle power:', err);
       // Revert on failure
-      setDevices(devices.map(d => 
-        d.host === host ? { ...d, binaryState: currentState } : d
-      ));
+      await discoverDevices();
     }
   };
 
@@ -155,7 +155,7 @@ const WemoPage = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="xl" sx={{ pt: 3, mb: 4 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <BoltIcon sx={{ fontSize: 40, mr: 2, color: '#76b900' }} />
@@ -238,9 +238,9 @@ const WemoPage = () => {
 
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Chip 
-                        label={device.binaryState ? 'ON' : 'OFF'} 
-                        color={device.binaryState ? 'success' : 'default'}
-                        variant={device.binaryState ? 'filled' : 'outlined'}
+                        label={(device.binaryState === 1 || device.binaryState === '1') ? 'ON' : 'OFF'} 
+                        color={(device.binaryState === 1 || device.binaryState === '1') ? 'success' : 'default'}
+                        variant={(device.binaryState === 1 || device.binaryState === '1') ? 'filled' : 'outlined'}
                         size="small"
                       />
                       <Chip 
@@ -256,12 +256,12 @@ const WemoPage = () => {
                     <FormControlLabel
                       control={
                         <Switch
-                          checked={!!device.binaryState}
+                          checked={device.binaryState === 1 || device.binaryState === '1'}
                           onChange={() => togglePower(device.host, device.binaryState)}
                           color="primary"
                         />
                       }
-                      label={device.binaryState ? 'Turn Off' : 'Turn On'}
+                      label={(device.binaryState === 1 || device.binaryState === '1') ? 'Turn Off' : 'Turn On'}
                       sx={{ width: '100%', margin: 0 }}
                     />
                   </CardActions>

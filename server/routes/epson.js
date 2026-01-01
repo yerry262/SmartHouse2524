@@ -9,8 +9,16 @@ router.get('/discover', async (req, res) => {
     // For now, we rely on the main device discovery service
     const devices = await req.app.locals.deviceDiscovery.getAllDevices();
     const printers = devices.filter(d => d.type === 'printer' || (d.vendor && d.vendor.includes('Epson')));
+    
+    if (global.activityLog && printers.length > 0) {
+      global.activityLog.discovery('Epson', `Found ${printers.length} printer(s)`);
+    }
+    
     res.json(printers);
   } catch (error) {
+    if (global.activityLog) {
+      global.activityLog.error('Epson', `Discovery failed: ${error.message}`);
+    }
     res.status(500).json({ error: 'Failed to discover printers' });
   }
 });

@@ -23,18 +23,20 @@ if (Wemo) {
   try {
     wemo.discover((err, deviceInfo) => {
       if (err) {
-        console.log('WeMo Discovery Error:', err);
+        if (global.activityLog) global.activityLog.error('WeMo', `Discovery error: ${err.message}`);
         return;
       }
 
-      console.log(`WeMo: New device found - ${deviceInfo.friendlyName} (${deviceInfo.host})`);
+      if (global.activityLog) {
+        global.activityLog.discovery('WeMo', `Found device: ${deviceInfo.friendlyName}`, { ip: deviceInfo.host });
+      }
       
       // Create a client for the device
       const client = wemo.client(deviceInfo);
       
       // Handle errors to prevent crashes
       client.on('error', (err) => {
-        console.log(`WeMo Error (${deviceInfo.friendlyName}):`, err.code || err.message);
+        if (global.activityLog) global.activityLog.warning('WeMo', `${deviceInfo.friendlyName}: ${err.code || err.message}`);
       });
 
       // Store device info and client
@@ -46,7 +48,10 @@ if (Wemo) {
 
       // Listen for state changes
       client.on('binaryState', (value) => {
-        console.log(`WeMo: ${deviceInfo.friendlyName} state changed to ${value}`);
+        const stateName = value === '1' || value === 1 ? 'ON' : 'OFF';
+        if (global.activityLog) {
+          global.activityLog.device('WeMo', `${deviceInfo.friendlyName} turned ${stateName}`, { ip: deviceInfo.host, state: value });
+        }
         if (discoveredDevices.has(deviceInfo.host)) {
           discoveredDevices.get(deviceInfo.host).state.binaryState = value;
         }

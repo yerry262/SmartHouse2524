@@ -88,8 +88,8 @@ const DeviceDetails = () => {
     if (!ip) return;
 
     try {
-      if (device.type === 'wemo-plug') {
-        const res = await axios.get(`/api/wemo/${ip}/info`);
+      if (device.type === 'wemo-plug' || device.type === 'wemo' || device.type?.toLowerCase().includes('wemo')) {
+        const res = await axios.get(`/api/wemo/${ip}/status`);
         // WeMo binaryState can be "0", "1", 0, or 1.
         const state = res.data.binaryState;
         setPowerState(state === 1 || state === '1');
@@ -169,7 +169,7 @@ const DeviceDetails = () => {
     }
 
     try {
-      if (device.type === 'wemo-plug') {
+      if (device.type === 'wemo-plug' || device.type === 'wemo' || device.type?.toLowerCase().includes('wemo')) {
         await axios.post(`/api/wemo/${ip}/power`, { state: newState });
       } else if (device.type && device.type.includes('tplink')) {
         await axios.post(`/api/tplink/${ip}/power`, { state: newState });
@@ -276,7 +276,7 @@ const DeviceDetails = () => {
         endpoint = `/api/appletv/${ip}/status`;
       } else if (device.type === 'sonos' || (device.metadata?.SERVER && device.metadata.SERVER.includes('Sonos'))) {
         endpoint = `/api/sonos/${ip}/status`;
-      } else if (device.type === 'wemo-plug') {
+      } else if (device.type === 'wemo-plug' || device.type === 'wemo') {
         // WeMo uses status/all and we filter for the specific device
         endpoint = `/api/wemo/status/all`;
       } else if (device.type === 'samsung-tv') {
@@ -293,7 +293,7 @@ const DeviceDetails = () => {
         const res = await axios.get(endpoint);
         
         // For WeMo, filter to find the specific device by IP
-        if (device.type === 'wemo-plug' && res.data.devices) {
+        if ((device.type === 'wemo-plug' || device.type === 'wemo') && res.data.devices) {
           const wemoDevice = res.data.devices.find(d => d.host === ip);
           if (wemoDevice) {
             setApiTestResult(wemoDevice);
@@ -324,7 +324,7 @@ const DeviceDetails = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="lg">
+      <Container maxWidth="lg" sx={{ pt: 3 }}>
         <Typography>Loading...</Typography>
       </Container>
     );
@@ -332,7 +332,7 @@ const DeviceDetails = () => {
 
   if (!device) {
     return (
-      <Container maxWidth="lg">
+      <Container maxWidth="lg" sx={{ pt: 3 }}>
         <Typography>Device not found</Typography>
         <Button onClick={() => navigate('/')} startIcon={<ArrowBackIcon />}>
           Back to Dashboard
@@ -342,7 +342,7 @@ const DeviceDetails = () => {
   }
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth="lg" sx={{ pt: 3 }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -379,7 +379,7 @@ const DeviceDetails = () => {
             <Divider sx={{ my: 3 }} />
 
             {/* Device Controls */}
-            {(device.type === 'wemo-plug' || (device.type && device.type.includes('tplink'))) && (
+            {(device.type === 'wemo-plug' || device.type === 'wemo' || device.type?.toLowerCase().includes('wemo') || (device.type && device.type.includes('tplink'))) && (
               <Box sx={{ mb: 3 }}>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                   Controls
@@ -828,6 +828,26 @@ const DeviceDetails = () => {
                       {device.ip || device.ipAddress}
                     </Typography>
                   </Box>
+                  {device.manufacturer && (
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Manufacturer
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {device.manufacturer}
+                      </Typography>
+                    </Box>
+                  )}
+                  {device.model && (
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Model
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {device.model}
+                      </Typography>
+                    </Box>
+                  )}
                   <Box>
                     <Typography variant="body2" color="text.secondary">
                       Port
@@ -836,14 +856,29 @@ const DeviceDetails = () => {
                       {device.port || 'N/A'}
                     </Typography>
                   </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Last Seen
-                    </Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {new Date(device.lastSeen).toLocaleString()}
-                    </Typography>
-                  </Box>
+                  {device.lastSeen && (
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Last Seen
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {new Date(device.lastSeen).toLocaleString()}
+                      </Typography>
+                    </Box>
+                  )}
+                  {powerState !== null && (device.type?.toLowerCase().includes('wemo') || device.type?.toLowerCase().includes('tplink')) && (
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Current State
+                      </Typography>
+                      <Chip 
+                        label={powerState ? "ON" : "OFF"}
+                        color={powerState ? "success" : "default"}
+                        size="small"
+                        sx={{ mt: 0.5 }}
+                      />
+                    </Box>
+                  )}
                 </Box>
               </Grid>
 

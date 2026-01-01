@@ -44,13 +44,20 @@ router.get('/discover', async (req, res) => {
       swversion: bridge.model?.swversion
     }));
 
+    // Log discovery
+    if (global.activityLog && bridges.length > 0) {
+      global.activityLog.discovery('Philips Hue', `Found ${bridges.length} bridge(s)`, { bridges: bridges.map(b => b.ipaddress) });
+    }
+
     res.json({
       success: true,
       count: bridges.length,
       bridges: bridges
     });
   } catch (error) {
-    console.error('Error discovering Hue bridges:', error);
+    if (global.activityLog) {
+      global.activityLog.error('Philips Hue', `Discovery failed: ${error.message}`);
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -295,7 +302,22 @@ router.put('/:ipAddress/lights/:lightId/state', async (req, res) => {
     if (alert) state.alert(alert);
     if (typeof transitiontime === 'number') state.transitiontime(transitiontime);
 
+    // Get light name for logging
+    const lightInfo = await apiInfo.api.lights.getLight(lightId).catch(() => null);
+    const lightName = lightInfo?.name || `Light ${lightId}`;
+
     const result = await apiInfo.api.lights.setLightState(lightId, state);
+
+    // Log the action
+    if (global.activityLog) {
+      if (typeof on === 'boolean') {
+        global.activityLog.action('Hue', `${on ? '💡 On' : '🔌 Off'}: ${lightName}`);
+      } else if (typeof brightness === 'number') {
+        global.activityLog.action('Hue', `🔆 Brightness ${Math.round(brightness/254*100)}%: ${lightName}`);
+      } else {
+        global.activityLog.action('Hue', `🎨 Updated: ${lightName}`);
+      }
+    }
 
     if (global.broadcast) {
       global.broadcast({
@@ -308,6 +330,9 @@ router.put('/:ipAddress/lights/:lightId/state', async (req, res) => {
 
     res.json({ success: result, lightId: lightId, state: req.body });
   } catch (error) {
+    if (global.activityLog) {
+      global.activityLog.error('Hue', `Light control failed: ${error.message}`);
+    }
     console.error('Error setting light state:', error);
     res.status(500).json({ error: error.message });
   }
@@ -372,10 +397,28 @@ router.put('/:ipAddress/groups/:groupId/state', async (req, res) => {
     if (typeof sat === 'number') state.sat(sat);
     if (typeof ct === 'number') state.ct(ct);
 
+    // Get group name for logging
+    const groupInfo = await apiInfo.api.groups.getGroup(groupId).catch(() => null);
+    const groupName = groupInfo?.name || `Group ${groupId}`;
+
     const result = await apiInfo.api.groups.setGroupState(groupId, state);
+
+    // Log the action
+    if (global.activityLog) {
+      if (typeof on === 'boolean') {
+        global.activityLog.action('Hue', `${on ? '💡 On' : '🔌 Off'}: ${groupName} (room)`);
+      } else if (typeof brightness === 'number') {
+        global.activityLog.action('Hue', `🔆 Brightness ${Math.round(brightness/254*100)}%: ${groupName}`);
+      } else {
+        global.activityLog.action('Hue', `🎨 Updated: ${groupName}`);
+      }
+    }
 
     res.json({ success: result, groupId: groupId, state: req.body });
   } catch (error) {
+    if (global.activityLog) {
+      global.activityLog.error('Hue', `Group control failed: ${error.message}`);
+    }
     console.error('Error setting group state:', error);
     res.status(500).json({ error: error.message });
   }

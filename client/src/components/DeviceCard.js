@@ -79,22 +79,42 @@ const DeviceCard = ({ device, onRefresh }) => {
   };
 
   const getDeviceIcon = (type) => {
-    switch (type.toLowerCase()) {
-      case 'sonos':
-        return <SpeakerIcon sx={{ fontSize: 40, color: '#00D1B2' }} />;
-      case 'samsung-tv':
-        return <TvIcon sx={{ fontSize: 40, color: '#1428A0' }} />;
-      case 'appletv':
-        return <SmartDisplayIcon sx={{ fontSize: 40, color: '#A3A3A3' }} />;
-      case 'camera':
-        return <VideocamIcon sx={{ fontSize: 40, color: '#FF6B6B' }} />;
-      case 'eero':
-        return <RouterIcon sx={{ fontSize: 40, color: '#00B5AD' }} />;
-      case 'ring':
-        return <DoorbellIcon sx={{ fontSize: 40, color: '#00B5E2' }} />;
-      default:
-        return <DevicesOtherIcon sx={{ fontSize: 40, color: '#667eea' }} />;
+    const typeLower = type?.toLowerCase() || '';
+    if (typeLower.includes('sonos')) {
+      return <SpeakerIcon sx={{ fontSize: 40, color: '#00D1B2' }} />;
+    } else if (typeLower.includes('samsung') && typeLower.includes('tv')) {
+      return <TvIcon sx={{ fontSize: 40, color: '#1428A0' }} />;
+    } else if (typeLower === 'appletv') {
+      return <SmartDisplayIcon sx={{ fontSize: 40, color: '#A3A3A3' }} />;
+    } else if (typeLower.includes('camera')) {
+      return <VideocamIcon sx={{ fontSize: 40, color: '#FF6B6B' }} />;
+    } else if (typeLower === 'eero') {
+      return <RouterIcon sx={{ fontSize: 40, color: '#00B5AD' }} />;
+    } else if (typeLower.includes('ring')) {
+      return <DoorbellIcon sx={{ fontSize: 40, color: '#00B5E2' }} />;
+    } else if (typeLower.includes('wemo')) {
+      return <DevicesOtherIcon sx={{ fontSize: 40, color: '#76b900' }} />;
+    } else {
+      return <DevicesOtherIcon sx={{ fontSize: 40, color: '#667eea' }} />;
     }
+  };
+
+  // Get background color for device type chip
+  const getTypeChipColor = (type) => {
+    const typeLower = type?.toLowerCase() || '';
+    if (typeLower.includes('wemo')) return { bgcolor: '#76b900', color: '#fff' };
+    if (typeLower.includes('sonos')) return { bgcolor: '#00D1B2', color: '#fff' };
+    if (typeLower.includes('appletv')) return { bgcolor: '#555', color: '#fff' };
+    if (typeLower.includes('hue')) return { bgcolor: '#FFB300', color: '#000' };
+    if (typeLower.includes('tplink')) return { bgcolor: '#00BFA5', color: '#fff' };
+    if (typeLower.includes('lifx')) return { bgcolor: '#4CAF50', color: '#fff' };
+    if (typeLower.includes('ring')) return { bgcolor: '#00B5E2', color: '#fff' };
+    if (typeLower.includes('eero')) return { bgcolor: '#00B5AD', color: '#fff' };
+    if (typeLower.includes('samsung')) return { bgcolor: '#1428A0', color: '#fff' };
+    if (typeLower.includes('lg')) return { bgcolor: '#A50034', color: '#fff' };
+    if (typeLower.includes('alexa')) return { bgcolor: '#FF9900', color: '#000' };
+    if (typeLower.includes('google')) return { bgcolor: '#4285F4', color: '#fff' };
+    return { bgcolor: 'transparent', color: 'inherit' };
   };
 
   return (
@@ -108,8 +128,12 @@ const DeviceCard = ({ device, onRefresh }) => {
             boxShadow: '0 12px 24px rgba(102, 126, 234, 0.3)',
           },
           height: '100%',
-          opacity: device.status === 'offline' ? 0.6 : 1,
-          backgroundColor: device.status === 'offline' ? 'rgba(0,0,0,0.02)' : 'transparent',
+          opacity: device.status === 'offline' ? 0.7 : 1,
+          backgroundColor: device.status === 'offline' 
+            ? 'rgba(20, 20, 30, 0.9)' 
+            : 'rgba(15, 18, 28, 0.95)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
         }}
         onClick={handleCardClick}
       >
@@ -122,7 +146,10 @@ const DeviceCard = ({ device, onRefresh }) => {
           </Box>
 
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, noWrap: true }}>
-            {friendlyName || device.name}
+            {friendlyName || 
+             (device.hostname && (device.name === 'Apple TV' || device.name?.startsWith('Apple TV (')) 
+              ? device.hostname.replace('.local', '').replace('.lan', '') 
+              : device.name)}
           </Typography>
           
           {deviceModel && (
@@ -159,7 +186,14 @@ const DeviceCard = ({ device, onRefresh }) => {
               color={device.status === 'online' ? 'success' : 'error'}
               size="small"
             />
-            <Chip label={device.type} size="small" variant="outlined" />
+            <Chip 
+              label={device.type} 
+              size="small" 
+              sx={{ 
+                ...getTypeChipColor(device.type),
+                fontWeight: 600,
+              }} 
+            />
           </Box>
         </CardContent>
       </Card>

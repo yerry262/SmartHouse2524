@@ -552,6 +552,34 @@ SmartHouse2524/
 3. **VLC**: Test stream URLs in VLC first
 ## 📅 Recent Updates (December 31, 2025)
 
+### 🔐 Cloud Account Integration
+Added a **Cloud Accounts Panel** (accessible via sidebar icon) for linking cloud-based smart home services:
+
+**Supported Cloud Providers:**
+- **Amazon Alexa** - Control Echo devices and Alexa-enabled accessories
+- **Google Home** - Manage Chromecast, Nest Hub, and Google Assistant devices
+- **Ring** - Access Ring doorbells, cameras, and security systems
+- **Nest** - Control Nest thermostats, cameras, and smoke detectors
+- **Samsung SmartThings** - Unified hub for Samsung and third-party devices
+- **Apple HomeKit** - iOS/macOS smart home ecosystem
+- **Tuya Smart** - Control Tuya-based white-label smart devices
+- **Home Assistant** - Local home automation platform integration
+- **Hubitat** - Local-first smart home hub
+- **IFTTT** - Automation triggers and actions
+
+**Features:**
+- One-click sign-in with provider branding and logos
+- Secure credential storage with encryption
+- Automatic token refresh for OAuth-based services
+- Visual connection status indicators
+- Quick-link buttons on device pages requiring authentication
+
+**Pages with Account Requirement:**
+- AlexaPage - Requires Amazon account
+- RingPage - Requires Ring account
+- GoogleHomePage - Requires Google account (with local discovery fallback)
+- SmartThingsPage - Requires Samsung SmartThings account
+
 ### 🆕 Test API Feature
 Added a **Test API** button to all device pages that allows developers to:
 - Test backend API endpoints directly from the UI

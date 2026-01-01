@@ -42,7 +42,12 @@ router.get('/devices', async (req, res) => {
     
     const client = getWyzeClient();
     const devices = await client.getDeviceList();
-    
+
+    // Log discovery
+    if (global.activityLog && devices.length > 0) {
+      global.activityLog.discovery('Wyze', `Found ${devices.length} device(s)`);
+    }
+
     res.json({
       success: true,
       count: devices.length,
@@ -55,6 +60,9 @@ router.get('/devices', async (req, res) => {
       }))
     });
   } catch (error) {
+    if (global.activityLog) {
+      global.activityLog.error('Wyze', `Device fetch failed: ${error.message}`);
+    }
     res.status(500).json({ 
       error: error.message,
       hint: 'Check WYZE_EMAIL and WYZE_PASSWORD in .env file'

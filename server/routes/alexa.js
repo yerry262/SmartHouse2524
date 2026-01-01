@@ -50,6 +50,9 @@ async function getAlexaClient() {
           reject(error);
         } else {
           console.log('✅ Alexa client initialized');
+          if (global.activityLog) {
+            global.activityLog.success('Alexa', 'Client initialized successfully');
+          }
           resolve();
         }
       });

@@ -39,6 +39,9 @@ router.post('/discover', async (req, res) => {
 
     scanner.on('service', (service) => {
       console.log('Found device:', service.name, service.host);
+      if (global.activityLog) {
+        global.activityLog.discovery('Google Home', `Found device: ${service.name}`, { host: service.host });
+      }
       
       const device = {
         name: service.name,
