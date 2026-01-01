@@ -189,7 +189,7 @@ class DeviceDiscovery {
         ssdpClient.stop();
         discovered.push(...ssdpDiscovered);
         resolve();
-      }, parseInt(process.env.DISCOVERY_TIMEOUT) || 10000);
+      }, parseInt(process.env.DISCOVERY_TIMEOUT) || 15000);
 
       ssdpClient.on('response', (headers, statusCode, rinfo) => {
         const device = {
@@ -214,11 +214,20 @@ class DeviceDiscovery {
       const browser = this.bonjour.find({ type: 'http' });
       
       browser.on('up', (service) => {
+        // Prefer IPv4 address over IPv6 link-local addresses
+        let primaryIp = service.addresses[0];
+        if (service.addresses && service.addresses.length > 0) {
+          const ipv4 = service.addresses.find(addr => !addr.includes(':'));
+          if (ipv4) {
+            primaryIp = ipv4;
+          }
+        }
+        
         const device = {
-          id: this.generateId(service.host || service.addresses[0]),
+          id: this.generateId(service.host || primaryIp),
           type: this.detectDeviceTypeFromService(service),
           name: service.name,
-          ip: service.addresses[0],
+          ip: primaryIp,
           port: service.port,
           status: 'online',
           lastSeen: new Date().toISOString(),
@@ -235,37 +244,65 @@ class DeviceDiscovery {
       const airplayBrowser = this.bonjour.find({ type: 'airplay' });
       
       airplayBrowser.on('up', (service) => {
-        // Try to extract a meaningful name from service
+        // Use service.name as the primary name (this has "Living Room", "Game Room", etc.)
         let deviceName = service.name || 'Apple TV';
         
-        // If service has a host, extract hostname without domain
-        if (service.host) {
-          const hostname = service.host.replace('.local', '').replace('.lan', '');
-          // Use hostname if it looks more descriptive than the service name
-          if (hostname && hostname.length > 0 && !hostname.match(/^[0-9a-f-]+$/i)) {
-            deviceName = hostname;
+        // Try to extract MAC address from deviceid or btaddr in txt records
+        let mac = null;
+        let model = null;
+        
+        if (service.txt) {
+          // deviceid is often the MAC address in format like "12:34:56:78:9A:BC"
+          if (service.txt.deviceid && service.txt.deviceid.includes(':')) {
+            mac = service.txt.deviceid;
+          }
+          // btaddr is Bluetooth address but can be used if no other MAC is available
+          if (!mac && service.txt.btaddr && service.txt.btaddr.includes(':')) {
+            mac = service.txt.btaddr;
+          }
+          // Get model info
+          if (service.txt.model) {
+            model = service.txt.model;
           }
         }
         
-        // If service.txt has a model or friendly name, use it
-        if (service.txt && typeof service.txt === 'object') {
-          if (service.txt.model) deviceName = service.txt.model;
-          if (service.txt.deviceid) deviceName = service.txt.deviceid;
+        // Determine device type - Macs get 'mac' type, Apple TVs get 'appletv'
+        let deviceType = 'appletv';
+        if (model && (model.includes('Mac') && !model.includes('AppleTV'))) {
+          deviceType = 'mac';
+          console.log(`Found ${deviceName} - detected as Mac (${model})`);
+        }
+        
+        // Prefer IPv4 address over IPv6 link-local addresses
+        let primaryIp = service.addresses[0];
+        if (service.addresses && service.addresses.length > 0) {
+          const ipv4 = service.addresses.find(addr => !addr.includes(':'));
+          if (ipv4) {
+            primaryIp = ipv4;
+          }
         }
         
         const device = {
-          id: this.generateId(service.host || service.addresses[0]),
-          type: 'appletv',
+          id: this.generateId(mac || service.host || primaryIp),
+          type: deviceType,
           name: deviceName,
           hostname: service.host,
-          ip: service.addresses[0],
+          ip: primaryIp,
           port: service.port,
+          mac: mac,
+          model: model,
           status: 'online',
           lastSeen: new Date().toISOString(),
           metadata: service
         };
         
-        if (!ssdpDiscovered.some(d => d.ip === device.ip)) {
+        // Check for duplicates by MAC or IP
+        const isDuplicate = ssdpDiscovered.some(d => 
+          (mac && d.mac && d.mac.replace(/[^a-fA-F0-9]/g, '').toLowerCase() === mac.replace(/[^a-fA-F0-9]/g, '').toLowerCase()) ||
+          d.ip === device.ip
+        );
+        
+        if (!isDuplicate) {
             ssdpDiscovered.push(device);
             global.broadcast({ type: 'device_discovered', device });
         }

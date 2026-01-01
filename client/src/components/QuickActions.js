@@ -99,7 +99,7 @@ const QuickActions = () => {
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Accordion 
-            defaultExpanded 
+            defaultExpanded={false}
             sx={{ 
               background: 'rgba(25, 28, 38, 0.95)', 
               backdropFilter: 'blur(10px)',
@@ -143,7 +143,7 @@ const QuickActions = () => {
 
         <Grid item xs={12} md={6}>
           <Accordion 
-            defaultExpanded
+            defaultExpanded={false}
             sx={{ 
               background: 'rgba(25, 28, 38, 0.95)', 
               backdropFilter: 'blur(10px)',

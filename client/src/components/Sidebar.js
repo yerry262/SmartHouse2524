@@ -63,7 +63,39 @@ const Sidebar = ({ open, onClose, devices }) => {
 
   const getDeviceCount = (deviceType) => {
     if (!deviceType) return 0;
-    return devices.filter(d => d.type.toLowerCase().includes(deviceType.toLowerCase())).length;
+    
+    // Map deviceType identifiers to actual device type patterns
+    const typeMatchers = {
+      'hue': (type) => type.includes('hue'),
+      'tplink': (type) => type.includes('tplink') || type.includes('kasa'),
+      'wemo': (type) => type.includes('wemo'),
+      'lifx': (type) => type.includes('lifx'),
+      'nanoleaf': (type) => type.includes('nanoleaf'),
+      'wyze': (type) => type.includes('wyze'),
+      'alexa': (type) => type.includes('alexa') || type.includes('echo'),
+      'google': (type) => type.includes('google') || type.includes('nest'),
+      'sonos': (type) => type.includes('sonos'),
+      'appletv': (type) => type.includes('appletv') || type.includes('apple-tv'),
+      'samsung-tv': (type) => type.includes('samsung-tv') || (type.includes('samsung') && type.includes('tv')),
+      'lg': (type) => type.includes('lg') && (type.includes('tv') || type.includes('webos')),
+      'ring': (type) => type.includes('ring'),
+      'camera': (type) => type.includes('camera') && !type.includes('ring'),
+      'eero': (type) => type.includes('eero'),
+      'miio': (type) => type.includes('miio') || type.includes('xiaomi'),
+      'aurora': (type) => type.includes('aurora'),
+      'epson': (type) => type.includes('epson') || type === 'printer',
+      'samsung-washer': (type) => type.includes('samsung') && type.includes('washer'),
+      'ge': (type) => type.includes('ge') && !type.includes('google'),
+      'samsung-appliance': (type) => type.includes('samsung') && type.includes('appliance'),
+      'smartthings': (type) => type.includes('smartthings'),
+    };
+    
+    const matcher = typeMatchers[deviceType];
+    if (!matcher) {
+      return devices.filter(d => d.type.toLowerCase().includes(deviceType.toLowerCase())).length;
+    }
+    
+    return devices.filter(d => matcher(d.type.toLowerCase())).length;
   };
 
   // Sort menu items: Dashboard first, then by device count descending
