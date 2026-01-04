@@ -1,0 +1,46 @@
+[
+  {
+    "id": "camera_192_168_1_205_80",
+    "name": "IP Camera (192.168.1.205)",
+    "ip": "192.168.1.205",
+    "port": 80,
+    "url": "http://192.168.1.205/media/?action=stream",
+    "type": "camera",
+    "cameraType": "dahua",
+    "protocol": "HTTP",
+    "capabilities": {
+      "mjpegStream": "http://192.168.1.205:80/cam/realmonitor?channel=1&subtype=0",
+      "snapshot": "http://192.168.1.205:80/cgi-bin/snapshot.cgi",
+      "settings": null,
+      "liveView": null,
+      "rtsp": null,
+      "ptz": false,
+      "audio": false,
+      "twoWayAudio": false
+    },
+    "requiresAuth": false,
+    "username": "admin",
+    "password": "",
+    "uid": "CMS1560-21147AE8EFB4-42D1C9",
+    "firmwareInfo": null,
+    "source": "discovered",
+    "discoveredAt": "2026-01-04T06:04:18.663Z",
+    "updatedAt": "2026-01-04T06:12:04.946Z",
+    "lastRefreshed": "2026-01-04T07:53:10.952Z"
+  },
+  {
+    "id": "camera_1767507078734",
+    "name": "Living Room Camera",
+    "url": "http://192.168.1.205/video/livemb.asp",
+    "ip": "192.168.1.205",
+    "port": 80,
+    "type": "camera",
+    "cameraType": "unknown",
+    "protocol": "HTTP",
+    "capabilities": {
+      "mjpegStream": "http://192.168.1.205/video/livemb.asp"
+    },
+    "source": "manual",
+    "createdAt": "2026-01-04T06:11:18.734Z"
+  }
+]

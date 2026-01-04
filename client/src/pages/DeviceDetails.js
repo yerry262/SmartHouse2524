@@ -35,6 +35,22 @@ import SkipNextIcon from '@mui/icons-material/SkipNext';
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import SpeakerIcon from '@mui/icons-material/Speaker';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import VideocamIcon from '@mui/icons-material/Videocam';
+import SettingsIcon from '@mui/icons-material/Settings';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import LinkIcon from '@mui/icons-material/Link';
+import HomeIcon from '@mui/icons-material/Home';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
+import KeyboardReturnIcon from '@mui/icons-material/KeyboardReturn';
+import InputIcon from '@mui/icons-material/Input';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 
@@ -54,6 +70,21 @@ const DeviceDetails = () => {
 
   // Apple TV state
   const [appletvStatus, setAppletvStatus] = useState(null);
+
+  // Camera state
+  const [cameraInfo, setCameraInfo] = useState(null);
+  const [cameraLoading, setCameraLoading] = useState(false);
+  const [showStream, setShowStream] = useState(false);
+  const [streamError, setStreamError] = useState(false);
+  const [snapshotUrl, setSnapshotUrl] = useState(null);
+  const [selectedStreamType, setSelectedStreamType] = useState('mjpeg'); // 'desktop', 'mobile', 'mjpeg', 'snapshot'
+
+  // Samsung TV state
+  const [samsungTvInfo, setSamsungTvInfo] = useState(null);
+  const [samsungTvLoading, setSamsungTvLoading] = useState(false);
+  const [samsungPaired, setSamsungPaired] = useState(false);
+  const [samsungPairing, setSamsungPairing] = useState(false);
+  const [samsungPairMessage, setSamsungPairMessage] = useState(null);
 
   // API Test state
   const [apiTestResult, setApiTestResult] = useState(null);
@@ -96,8 +127,15 @@ const DeviceDetails = () => {
       } else if (device.type && device.type.includes('tplink')) {
         // TP-Link state fetching if needed
       } else if (device.type === 'samsung-tv') {
-        const res = await axios.get(`/api/samsung/${ip}/status`);
-        setPowerState(res.data.online);
+        setSamsungTvLoading(true);
+        try {
+          const res = await axios.get(`/api/samsung/${ip}/status`);
+          setPowerState(res.data.online);
+          setSamsungTvInfo(res.data);
+        } catch (err) {
+          console.error('Error fetching Samsung TV status:', err);
+        }
+        setSamsungTvLoading(false);
       } else if (device.type === 'sonos' || (device.metadata?.SERVER && device.metadata.SERVER.includes('Sonos'))) {
         // Fetch Sonos status
         setSonosLoading(true);
@@ -146,6 +184,11 @@ const DeviceDetails = () => {
   useEffect(() => {
     if (device) {
       fetchDeviceState();
+      
+      // Check Samsung TV pairing status
+      if (device.type === 'samsung-tv') {
+        checkSamsungPairingStatus();
+      }
       
       // Auto-refresh for Sonos devices
       const isSonosDevice = device.type === 'sonos' || (device.metadata?.SERVER && device.metadata.SERVER.includes('Sonos'));
@@ -196,6 +239,45 @@ const DeviceDetails = () => {
     } catch (err) {
         console.error('Error sending key:', err);
         setControlError('Failed to send command');
+    }
+  };
+
+  // Samsung TV pairing handler
+  const handleSamsungPair = async () => {
+    const ip = device.ip || device.ipAddress;
+    if (!ip) return;
+    
+    setSamsungPairing(true);
+    setSamsungPairMessage(null);
+    
+    try {
+      const mac = samsungTvInfo?.wifiMac || '';
+      const response = await axios.post(`/api/samsung/${ip}/pair`, { mac });
+      
+      setSamsungPaired(response.data.paired || response.data.success);
+      setSamsungPairMessage(response.data.message);
+      
+      if (response.data.paired || response.data.success) {
+        // Refresh status after successful pairing
+        fetchDeviceState();
+      }
+    } catch (err) {
+      console.error('Error pairing Samsung TV:', err);
+      setSamsungPairMessage(err.response?.data?.message || 'Pairing failed. Make sure TV is on and try again.');
+    }
+    setSamsungPairing(false);
+  };
+
+  // Check Samsung TV pairing status
+  const checkSamsungPairingStatus = async () => {
+    const ip = device?.ip || device?.ipAddress;
+    if (!ip) return;
+    
+    try {
+      const response = await axios.get(`/api/samsung/${ip}/paired`);
+      setSamsungPaired(response.data.paired);
+    } catch (err) {
+      // Ignore errors
     }
   };
 
@@ -259,6 +341,131 @@ const DeviceDetails = () => {
       console.error('Error changing volume:', err);
     }
   };
+
+  // Camera control handlers
+  const handleCameraTest = async () => {
+    const ip = device.ip || device.ipAddress;
+    if (!ip) return;
+    
+    setCameraLoading(true);
+    setControlError(null);
+    
+    try {
+      const res = await axios.post('/api/cameras/probe', { ip, port: device.port || 80 });
+      setCameraInfo(res.data);
+    } catch (err) {
+      console.error('Error testing camera:', err);
+      setControlError('Failed to connect to camera');
+    } finally {
+      setCameraLoading(false);
+    }
+  };
+
+  const handleViewStream = () => {
+    setStreamError(false);
+    setShowStream(true);
+  };
+
+  const handleCloseStream = () => {
+    setShowStream(false);
+  };
+
+  const handleStreamError = () => {
+    setStreamError(true);
+  };
+
+  const handleSnapshot = async () => {
+    const ip = device.ip || device.ipAddress;
+    const port = device.port || 80;
+    // Generate snapshot URL with timestamp to force reload
+    const timestamp = Date.now();
+    setSnapshotUrl(`http://${ip}:${port}/media/?action=snapshot&t=${timestamp}`);
+  };
+
+  const handleOpenCameraSettings = () => {
+    const ip = device.ip || device.ipAddress;
+    const port = device.port || 80;
+    window.open(`http://${ip}:${port}/setting.asp`, '_blank');
+  };
+
+  const handleOpenCameraWebUI = () => {
+    const ip = device.ip || device.ipAddress;
+    const port = device.port || 80;
+    window.open(`http://${ip}:${port}/`, '_blank');
+  };
+
+  // Get all available camera stream options
+  const getCameraStreamOptions = () => {
+    const ip = device.ip || device.ipAddress;
+    const port = device.port || 80;
+    
+    return {
+      desktop: {
+        label: 'Desktop Stream (ActiveX)',
+        directUrl: `http://${ip}:${port}/video/livesp.asp`,
+        proxyUrl: `/api/cameras/proxy/${ip}/${port}/video/livesp.asp`,
+        description: 'Best for Chrome/Edge on desktop'
+      },
+      mobile: {
+        label: 'Mobile Stream (HTML5)',
+        directUrl: `http://${ip}:${port}/video/livemb.asp`,
+        proxyUrl: `/api/cameras/proxy/${ip}/${port}/video/livemb.asp`,
+        description: 'Works on iOS Safari and mobile browsers'
+      },
+      mjpeg: {
+        label: 'MJPEG Stream',
+        directUrl: `http://${ip}:${port}/media/?action=stream`,
+        proxyUrl: `/api/cameras/proxy/${ip}/${port}/media/?action=stream`,
+        description: 'Universal MJPEG - works on most browsers'
+      },
+      snapshot: {
+        label: 'Snapshot (Image)',
+        directUrl: `http://${ip}:${port}/media/?action=snapshot`,
+        proxyUrl: `/api/cameras/proxy/${ip}/${port}/media/?action=snapshot`,
+        description: 'Static image - refreshes manually'
+      }
+    };
+  };
+
+  const getCameraStreamUrl = () => {
+    const ip = device.ip || device.ipAddress;
+    const port = device.port || 80;
+    const options = getCameraStreamOptions();
+    
+    // Return the selected stream type URL
+    if (options[selectedStreamType]) {
+      return options[selectedStreamType].directUrl;
+    }
+    
+    // Try the camera's stream URL from probe
+    if (cameraInfo?.streamUrl) {
+      return cameraInfo.streamUrl;
+    }
+    // Default to mobile stream (most compatible)
+    return `http://${ip}:${port}/video/livemb.asp`;
+  };
+
+  const getCameraProxyStreamUrl = () => {
+    const ip = device.ip || device.ipAddress;
+    const port = device.port || 80;
+    const options = getCameraStreamOptions();
+    
+    // Return the selected stream type proxy URL
+    if (options[selectedStreamType]) {
+      return options[selectedStreamType].proxyUrl;
+    }
+    
+    // Default to mobile stream proxy
+    return `/api/cameras/proxy/${ip}/${port}/video/livemb.asp`;
+  };
+
+  // Check if device is a camera
+  const isCamera = device?.type === 'camera' || 
+    device?.type === 'ip-camera' || 
+    device?.deviceType === 'camera' ||
+    device?.metadata?.deviceType === 'camera' ||
+    device?.name?.toLowerCase().includes('cam') ||
+    device?.name?.toLowerCase().includes('ipcam');
 
   // Test API handler
   const handleTestApi = async () => {
@@ -409,35 +616,323 @@ const DeviceDetails = () => {
             {device.type === 'samsung-tv' && (
               <Box sx={{ mb: 3 }}>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <TvIcon /> TV Controls
+                  <TvIcon /> Samsung TV Controls
                 </Typography>
                 {controlError && (
-                  <Alert severity="error" sx={{ mb: 2 }}>
+                  <Alert severity="error" sx={{ mb: 2 }} onClose={() => setControlError(null)}>
                     {controlError}
                   </Alert>
                 )}
+                
+                {/* TV Info Card */}
+                {samsungTvInfo && (
+                  <Paper sx={{ p: 2, mb: 2, bgcolor: 'rgba(255,255,255,0.05)' }}>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <Chip 
+                            label={powerState ? 'ONLINE' : 'OFFLINE'} 
+                            color={powerState ? 'success' : 'default'}
+                            size="small"
+                          />
+                          {samsungPaired && (
+                            <Chip 
+                              icon={<LinkIcon />}
+                              label="Paired" 
+                              color="success"
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                          {samsungTvLoading && <CircularProgress size={16} />}
+                        </Box>
+                        <Typography variant="body2" color="textSecondary">
+                          Model: {samsungTvInfo.model || 'Unknown'}
+                        </Typography>
+                        {samsungTvInfo.resolution && (
+                          <Typography variant="body2" color="textSecondary">
+                            Resolution: {samsungTvInfo.resolution}
+                          </Typography>
+                        )}
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        {samsungTvInfo.wifiMac && (
+                          <Typography variant="body2" color="textSecondary">
+                            WiFi MAC: {samsungTvInfo.wifiMac}
+                          </Typography>
+                        )}
+                        {samsungTvInfo.responseTime && (
+                          <Typography variant="body2" color="textSecondary">
+                            Response: {samsungTvInfo.responseTime}ms
+                          </Typography>
+                        )}
+                        <Button
+                          variant={samsungPaired ? "outlined" : "contained"}
+                          color={samsungPaired ? "success" : "primary"}
+                          size="small"
+                          onClick={handleSamsungPair}
+                          startIcon={samsungPairing ? <CircularProgress size={14} /> : <LinkIcon />}
+                          disabled={samsungPairing}
+                          sx={{ mt: 1 }}
+                        >
+                          {samsungPaired ? 'Re-Pair' : 'Pair TV'}
+                        </Button>
+                      </Grid>
+                    </Grid>
+                    {samsungPairMessage && (
+                      <Alert 
+                        severity={samsungPaired ? 'success' : 'info'} 
+                        sx={{ mt: 2, fontSize: '0.8rem' }}
+                        onClose={() => setSamsungPairMessage(null)}
+                      >
+                        {samsungPairMessage}
+                      </Alert>
+                    )}
+                  </Paper>
+                )}
+                
                 <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6} md={4}>
-                        <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <Typography>Power</Typography>
+                  {/* Power Control */}
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Paper sx={{ p: 2, textAlign: 'center', height: '100%' }}>
+                      <Typography variant="subtitle2" gutterBottom>Power</Typography>
+                      <Button 
+                        variant={powerState ? "contained" : "outlined"} 
+                        color={powerState ? "success" : "error"}
+                        onClick={handlePowerToggle}
+                        startIcon={<PowerSettingsNewIcon />}
+                        fullWidth
+                        sx={{ py: 1.5 }}
+                      >
+                        {powerState ? "ON" : "OFF"}
+                      </Button>
+                    </Paper>
+                  </Grid>
+                  
+                  {/* Volume Controls */}
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Paper sx={{ p: 2, textAlign: 'center', height: '100%' }}>
+                      <Typography variant="subtitle2" gutterBottom>Volume</Typography>
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                        <IconButton 
+                          onClick={() => handleSamsungKey('KEY_VOLDOWN')} 
+                          sx={{ bgcolor: 'action.hover' }}
+                        >
+                          <VolumeDownIcon />
+                        </IconButton>
+                        <IconButton 
+                          onClick={() => handleSamsungKey('KEY_MUTE')} 
+                          color="warning"
+                          sx={{ bgcolor: 'action.hover' }}
+                        >
+                          <VolumeOffIcon />
+                        </IconButton>
+                        <IconButton 
+                          onClick={() => handleSamsungKey('KEY_VOLUP')} 
+                          sx={{ bgcolor: 'action.hover' }}
+                        >
+                          <VolumeUpIcon />
+                        </IconButton>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                  
+                  {/* Channel Controls */}
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Paper sx={{ p: 2, textAlign: 'center', height: '100%' }}>
+                      <Typography variant="subtitle2" gutterBottom>Channel</Typography>
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                        <IconButton 
+                          onClick={() => handleSamsungKey('KEY_CHDOWN')} 
+                          sx={{ bgcolor: 'action.hover' }}
+                        >
+                          <RemoveIcon />
+                        </IconButton>
+                        <IconButton 
+                          onClick={() => handleSamsungKey('KEY_CH_LIST')} 
+                          sx={{ bgcolor: 'action.hover' }}
+                        >
+                          <TvIcon />
+                        </IconButton>
+                        <IconButton 
+                          onClick={() => handleSamsungKey('KEY_CHUP')} 
+                          sx={{ bgcolor: 'action.hover' }}
+                        >
+                          <AddIcon />
+                        </IconButton>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                  
+                  {/* Source/Input */}
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Paper sx={{ p: 2, textAlign: 'center', height: '100%' }}>
+                      <Typography variant="subtitle2" gutterBottom>Input</Typography>
+                      <Button 
+                        variant="outlined" 
+                        onClick={() => handleSamsungKey('KEY_SOURCE')}
+                        startIcon={<InputIcon />}
+                        fullWidth
+                      >
+                        Source
+                      </Button>
+                    </Paper>
+                  </Grid>
+                  
+                  {/* Navigation D-Pad */}
+                  <Grid item xs={12} md={6}>
+                    <Paper sx={{ p: 2, textAlign: 'center' }}>
+                      <Typography variant="subtitle2" gutterBottom>Navigation</Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                        <IconButton 
+                          onClick={() => handleSamsungKey('KEY_UP')} 
+                          sx={{ bgcolor: 'action.hover' }}
+                          size="large"
+                        >
+                          <ArrowUpwardIcon />
+                        </IconButton>
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                          <IconButton 
+                            onClick={() => handleSamsungKey('KEY_LEFT')} 
+                            sx={{ bgcolor: 'action.hover' }}
+                            size="large"
+                          >
+                            <ArrowBackIosIcon />
+                          </IconButton>
+                          <IconButton 
+                            onClick={() => handleSamsungKey('KEY_ENTER')} 
+                            color="primary"
+                            sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}
+                            size="large"
+                          >
+                            <RadioButtonCheckedIcon />
+                          </IconButton>
+                          <IconButton 
+                            onClick={() => handleSamsungKey('KEY_RIGHT')} 
+                            sx={{ bgcolor: 'action.hover' }}
+                            size="large"
+                          >
+                            <ArrowForwardIosIcon />
+                          </IconButton>
+                        </Box>
+                        <IconButton 
+                          onClick={() => handleSamsungKey('KEY_DOWN')} 
+                          sx={{ bgcolor: 'action.hover' }}
+                          size="large"
+                        >
+                          <ArrowDownwardIcon />
+                        </IconButton>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                  
+                  {/* Menu/Home/Back */}
+                  <Grid item xs={12} md={6}>
+                    <Paper sx={{ p: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom textAlign="center">Quick Actions</Typography>
+                      <Grid container spacing={1}>
+                        <Grid item xs={4}>
+                          <Button 
+                            variant="outlined" 
+                            onClick={() => handleSamsungKey('KEY_HOME')}
+                            startIcon={<HomeIcon />}
+                            fullWidth
+                            size="small"
+                          >
+                            Home
+                          </Button>
+                        </Grid>
+                        <Grid item xs={4}>
+                          <Button 
+                            variant="outlined" 
+                            onClick={() => handleSamsungKey('KEY_RETURN')}
+                            startIcon={<KeyboardReturnIcon />}
+                            fullWidth
+                            size="small"
+                          >
+                            Back
+                          </Button>
+                        </Grid>
+                        <Grid item xs={4}>
+                          <Button 
+                            variant="outlined" 
+                            onClick={() => handleSamsungKey('KEY_MENU')}
+                            startIcon={<SettingsIcon />}
+                            fullWidth
+                            size="small"
+                          >
+                            Menu
+                          </Button>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Button 
+                            variant="outlined" 
+                            onClick={() => handleSamsungKey('KEY_INFO')}
+                            fullWidth
+                            size="small"
+                          >
+                            Info
+                          </Button>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Button 
+                            variant="outlined" 
+                            onClick={() => handleSamsungKey('KEY_GUIDE')}
+                            fullWidth
+                            size="small"
+                          >
+                            Guide
+                          </Button>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Grid>
+                  
+                  {/* Playback Controls */}
+                  <Grid item xs={12} md={6}>
+                    <Paper sx={{ p: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom textAlign="center">Playback</Typography>
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <IconButton onClick={() => handleSamsungKey('KEY_REWIND')} sx={{ bgcolor: 'action.hover' }}>
+                          <SkipPreviousIcon />
+                        </IconButton>
+                        <IconButton onClick={() => handleSamsungKey('KEY_PLAY')} color="success" sx={{ bgcolor: 'action.hover' }}>
+                          <PlayArrowIcon />
+                        </IconButton>
+                        <IconButton onClick={() => handleSamsungKey('KEY_PAUSE')} color="warning" sx={{ bgcolor: 'action.hover' }}>
+                          <PauseIcon />
+                        </IconButton>
+                        <IconButton onClick={() => handleSamsungKey('KEY_STOP')} color="error" sx={{ bgcolor: 'action.hover' }}>
+                          <StopIcon />
+                        </IconButton>
+                        <IconButton onClick={() => handleSamsungKey('KEY_FF')} sx={{ bgcolor: 'action.hover' }}>
+                          <SkipNextIcon />
+                        </IconButton>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                  
+                  {/* Number Pad (for channel entry) */}
+                  <Grid item xs={12} md={6}>
+                    <Paper sx={{ p: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom textAlign="center">Number Pad</Typography>
+                      <Grid container spacing={0.5} sx={{ maxWidth: 180, mx: 'auto' }}>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, '-', 0, 'PRECH'].map((num) => (
+                          <Grid item xs={4} key={num}>
                             <Button 
-                                variant={powerState ? "contained" : "outlined"} 
-                                color={powerState ? "success" : "error"}
-                                onClick={handlePowerToggle}
-                                startIcon={<PowerSettingsNewIcon />}
+                              variant="outlined" 
+                              onClick={() => handleSamsungKey(num === 'PRECH' ? 'KEY_PRECH' : num === '-' ? 'KEY_MINUS' : `KEY_${num}`)}
+                              fullWidth
+                              size="small"
+                              sx={{ minWidth: 0, py: 1 }}
                             >
-                                {powerState ? "ON" : "OFF"}
+                              {num === 'PRECH' ? '⟲' : num}
                             </Button>
-                        </Paper>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={8}>
-                        <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Typography>Volume</Typography>
-                            <Button variant="outlined" onClick={() => handleSamsungKey('KEY_VOLUP')} startIcon={<VolumeUpIcon />}>Up</Button>
-                            <Button variant="outlined" onClick={() => handleSamsungKey('KEY_VOLDOWN')} startIcon={<VolumeDownIcon />}>Down</Button>
-                            <Button variant="outlined" color="warning" onClick={() => handleSamsungKey('KEY_MUTE')} startIcon={<VolumeOffIcon />}>Mute</Button>
-                        </Paper>
-                    </Grid>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Paper>
+                  </Grid>
                 </Grid>
               </Box>
             )}
@@ -674,6 +1169,249 @@ const DeviceDetails = () => {
                       Retry
                     </Button>
                   </Alert>
+                )}
+              </Box>
+            )}
+
+            {/* Camera Controls Section */}
+            {isCamera && (
+              <Box sx={{ mb: 3 }}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <VideocamIcon /> Camera Controls
+                </Typography>
+                
+                {/* Camera Action Buttons */}
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<VideocamIcon />}
+                    onClick={handleViewStream}
+                    sx={{ 
+                      bgcolor: 'primary.main',
+                      '&:hover': { bgcolor: 'primary.dark' }
+                    }}
+                  >
+                    View Live Stream
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<PhotoCameraIcon />}
+                    onClick={handleSnapshot}
+                  >
+                    Take Snapshot
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<SettingsIcon />}
+                    onClick={handleOpenCameraSettings}
+                  >
+                    Settings
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<OpenInNewIcon />}
+                    onClick={handleOpenCameraWebUI}
+                  >
+                    Web Interface
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={cameraLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
+                    onClick={handleCameraTest}
+                    disabled={cameraLoading}
+                  >
+                    Test Connection
+                  </Button>
+                </Box>
+
+                {/* Camera Stream Viewer */}
+                {showStream && (
+                  <Paper sx={{ p: 2, mb: 2, background: 'rgba(0,0,0,0.4)' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        Live Stream
+                      </Typography>
+                      <Button size="small" onClick={handleCloseStream}>
+                        Close
+                      </Button>
+                    </Box>
+                    
+                    {/* Stream Type Selector */}
+                    <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {Object.entries(getCameraStreamOptions()).map(([key, option]) => (
+                        <Chip
+                          key={key}
+                          label={option.label}
+                          onClick={() => {
+                            setSelectedStreamType(key);
+                            setStreamError(false);
+                          }}
+                          color={selectedStreamType === key ? 'primary' : 'default'}
+                          variant={selectedStreamType === key ? 'filled' : 'outlined'}
+                          size="small"
+                        />
+                      ))}
+                    </Box>
+                    
+                    {/* Stream Info */}
+                    <Alert severity="info" sx={{ mb: 2, py: 0.5 }}>
+                      <Typography variant="caption">
+                        {getCameraStreamOptions()[selectedStreamType]?.description || 'Select a stream type'}
+                      </Typography>
+                    </Alert>
+
+                    {streamError ? (
+                      <Box sx={{ textAlign: 'center', py: 2 }}>
+                        <Alert severity="warning" sx={{ mb: 2 }}>
+                          Direct stream failed. Trying through server proxy...
+                        </Alert>
+                        <img
+                          src={getCameraProxyStreamUrl()}
+                          alt="Camera Stream (Proxy)"
+                          style={{ 
+                            width: '100%', 
+                            maxWidth: '800px', 
+                            height: 'auto',
+                            borderRadius: '8px',
+                            background: '#000'
+                          }}
+                          onError={() => setControlError('Unable to load stream. Try a different stream type or open in browser.')}
+                        />
+                        <Box sx={{ mt: 2 }}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<OpenInNewIcon />}
+                            onClick={() => window.open(getCameraStreamUrl(), '_blank')}
+                          >
+                            Open Direct URL in Browser
+                          </Button>
+                        </Box>
+                      </Box>
+                    ) : (
+                      <Box sx={{ textAlign: 'center' }}>
+                        <img
+                          src={getCameraStreamUrl()}
+                          alt="Camera Live Stream"
+                          style={{ 
+                            width: '100%', 
+                            maxWidth: '800px', 
+                            height: 'auto',
+                            borderRadius: '8px',
+                            background: '#000'
+                          }}
+                          onError={handleStreamError}
+                        />
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                          Direct URL: {getCameraStreamUrl()}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                          Proxy URL: {getCameraProxyStreamUrl()}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Paper>
+                )}
+
+                {/* Snapshot Viewer */}
+                {snapshotUrl && (
+                  <Paper sx={{ p: 2, mb: 2, background: 'rgba(0,0,0,0.4)' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        Snapshot
+                      </Typography>
+                      <Box>
+                        <Button 
+                          size="small" 
+                          onClick={handleSnapshot}
+                          startIcon={<RefreshIcon />}
+                          sx={{ mr: 1 }}
+                        >
+                          Refresh
+                        </Button>
+                        <Button size="small" onClick={() => setSnapshotUrl(null)}>
+                          Close
+                        </Button>
+                      </Box>
+                    </Box>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <img
+                        src={snapshotUrl}
+                        alt="Camera Snapshot"
+                        style={{ 
+                          width: '100%', 
+                          maxWidth: '800px', 
+                          height: 'auto',
+                          borderRadius: '8px',
+                          background: '#000'
+                        }}
+                        onError={() => setControlError('Failed to load snapshot')}
+                      />
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        Captured at: {new Date().toLocaleTimeString()}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                )}
+
+                {/* Camera Info (from probe) */}
+                {cameraInfo && (
+                  <Paper sx={{ p: 2, background: 'rgba(0,0,0,0.3)' }}>
+                    <Typography variant="subtitle2" color="primary" sx={{ mb: 1 }}>
+                      Camera Information
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          {cameraInfo.cameraType && (
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <Typography variant="body2" color="text.secondary">Type</Typography>
+                              <Typography variant="body2">{cameraInfo.cameraType}</Typography>
+                            </Box>
+                          )}
+                          {cameraInfo.manufacturer && (
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <Typography variant="body2" color="text.secondary">Manufacturer</Typography>
+                              <Typography variant="body2">{cameraInfo.manufacturer}</Typography>
+                            </Box>
+                          )}
+                          {cameraInfo.model && (
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <Typography variant="body2" color="text.secondary">Model</Typography>
+                              <Typography variant="body2">{cameraInfo.model}</Typography>
+                            </Box>
+                          )}
+                          {cameraInfo.firmwareVersion && (
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <Typography variant="body2" color="text.secondary">Firmware</Typography>
+                              <Typography variant="body2">{cameraInfo.firmwareVersion}</Typography>
+                            </Box>
+                          )}
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          {cameraInfo.streamUrl && (
+                            <Box>
+                              <Typography variant="body2" color="text.secondary">Stream URL</Typography>
+                              <Typography variant="caption" sx={{ wordBreak: 'break-all' }}>
+                                {cameraInfo.streamUrl}
+                              </Typography>
+                            </Box>
+                          )}
+                          {cameraInfo.snapshotUrl && (
+                            <Box>
+                              <Typography variant="body2" color="text.secondary">Snapshot URL</Typography>
+                              <Typography variant="caption" sx={{ wordBreak: 'break-all' }}>
+                                {cameraInfo.snapshotUrl}
+                              </Typography>
+                            </Box>
+                          )}
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </Paper>
                 )}
               </Box>
             )}

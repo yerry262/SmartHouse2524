@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'smarthouse-backend',
       script: 'index.js',
-      cwd: 'C:/Users/jerry/Desktop/SmartHouse2524/server',
+      cwd: 'C:/Users/jerry/OneDrive/Desktop/REPOs/SmartHouse2524/server',
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,
@@ -13,8 +13,8 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 5000
       },
-      error_file: 'C:/Users/jerry/Desktop/SmartHouse2524/logs/backend-error.log',
-      out_file: 'C:/Users/jerry/Desktop/SmartHouse2524/logs/backend-out.log',
+      error_file: 'C:/Users/jerry/OneDrive/Desktop/REPOs/SmartHouse2524/logs/backend-error.log',
+      out_file: 'C:/Users/jerry/OneDrive/Desktop/REPOs/SmartHouse2524/logs/backend-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       restart_delay: 3000,
       max_restarts: 10,
@@ -23,7 +23,7 @@ module.exports = {
     {
       name: 'smarthouse-frontend',
       script: 'node_modules/react-scripts/scripts/start.js',
-      cwd: 'C:/Users/jerry/Desktop/SmartHouse2524/client',
+      cwd: 'C:/Users/jerry/OneDrive/Desktop/REPOs/SmartHouse2524/client',
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,
@@ -34,8 +34,8 @@ module.exports = {
         PORT: 3000,
         BROWSER: 'none'
       },
-      error_file: 'C:/Users/jerry/Desktop/SmartHouse2524/logs/frontend-error.log',
-      out_file: 'C:/Users/jerry/Desktop/SmartHouse2524/logs/frontend-out.log',
+      error_file: 'C:/Users/jerry/OneDrive/Desktop/REPOs/SmartHouse2524/logs/frontend-error.log',
+      out_file: 'C:/Users/jerry/OneDrive/Desktop/REPOs/SmartHouse2524/logs/frontend-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       restart_delay: 5000,
       max_restarts: 10,

@@ -45,6 +45,8 @@ import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import LinkIcon from '@mui/icons-material/Link';
+import LinkOffIcon from '@mui/icons-material/LinkOff';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 
@@ -70,6 +72,10 @@ const SamsungPage = () => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [installedApps, setInstalledApps] = useState([]);
   const [appsLoading, setAppsLoading] = useState(false);
+  
+  // Pairing state
+  const [pairingStatus, setPairingStatus] = useState({}); // { ip: { paired: boolean, loading: boolean, message: string } }
+  const [pairingLoading, setPairingLoading] = useState(false);
 
   useEffect(() => {
     discoverDevices();
@@ -90,10 +96,66 @@ const SamsungPage = () => {
     try {
       const response = await axios.get('/api/samsung/discover');
       setDevices(response.data.tvs || []);
+      
+      // Check pairing status for each TV
+      for (const tv of response.data.tvs || []) {
+        checkPairingStatus(tv.ip);
+      }
     } catch (error) {
       console.error('Error discovering Samsung TVs:', error);
     }
     setLoading(false);
+  };
+
+  // Check if a TV is paired
+  const checkPairingStatus = async (ip) => {
+    try {
+      const response = await axios.get(`/api/samsung/${ip}/paired`);
+      setPairingStatus(prev => ({
+        ...prev,
+        [ip]: { paired: response.data.paired, hasToken: response.data.hasToken }
+      }));
+    } catch (error) {
+      console.error('Error checking pairing status:', error);
+    }
+  };
+
+  // Initiate pairing with a TV
+  const handlePairDevice = async (ip) => {
+    setPairingLoading(true);
+    setPairingStatus(prev => ({
+      ...prev,
+      [ip]: { ...prev[ip], loading: true, message: 'Initiating pairing...' }
+    }));
+    
+    try {
+      const response = await axios.post(`/api/samsung/${ip}/pair`);
+      
+      setPairingStatus(prev => ({
+        ...prev,
+        [ip]: {
+          paired: response.data.paired || response.data.success,
+          loading: false,
+          message: response.data.message,
+          instructions: response.data.instructions
+        }
+      }));
+      
+      if (response.data.paired || response.data.success) {
+        // Refresh status after successful pairing
+        getTvStatus(ip);
+      }
+    } catch (error) {
+      setPairingStatus(prev => ({
+        ...prev,
+        [ip]: {
+          paired: false,
+          loading: false,
+          message: error.response?.data?.message || error.message
+        }
+      }));
+    }
+    setPairingLoading(false);
   };
 
   const addManualDevice = async () => {
@@ -411,6 +473,15 @@ const SamsungPage = () => {
                       color={getConnectionStatusColor()}
                       size="small"
                     />
+                    {pairingStatus[selectedDevice]?.paired && (
+                      <Chip
+                        icon={<LinkIcon />}
+                        label="Paired"
+                        color="success"
+                        size="small"
+                        variant="outlined"
+                      />
+                    )}
                   </Box>
                   {tvStatus && (
                     <Box sx={{ fontSize: '0.8rem' }}>
@@ -424,16 +495,46 @@ const SamsungPage = () => {
                       )}
                     </Box>
                   )}
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => getTvStatus(selectedDevice)}
-                    startIcon={<RefreshIcon />}
-                    sx={{ mt: 1 }}
-                    fullWidth
-                  >
-                    Refresh Status
-                  </Button>
+                  
+                  {/* Pairing Status & Button */}
+                  {pairingStatus[selectedDevice]?.message && (
+                    <Alert 
+                      severity={pairingStatus[selectedDevice]?.paired ? 'success' : 'info'} 
+                      sx={{ mt: 1, mb: 1, fontSize: '0.75rem' }}
+                    >
+                      {pairingStatus[selectedDevice].message}
+                      {pairingStatus[selectedDevice]?.instructions && (
+                        <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                          {pairingStatus[selectedDevice].instructions.map((inst, i) => (
+                            <li key={i}>{inst}</li>
+                          ))}
+                        </Box>
+                      )}
+                    </Alert>
+                  )}
+                  
+                  <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                    <Button
+                      size="small"
+                      variant={pairingStatus[selectedDevice]?.paired ? "outlined" : "contained"}
+                      color={pairingStatus[selectedDevice]?.paired ? "success" : "primary"}
+                      onClick={() => handlePairDevice(selectedDevice)}
+                      startIcon={pairingLoading ? <CircularProgress size={14} /> : <LinkIcon />}
+                      disabled={pairingLoading}
+                      sx={{ flex: 1 }}
+                    >
+                      {pairingStatus[selectedDevice]?.paired ? 'Re-Pair' : 'Pair TV'}
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => getTvStatus(selectedDevice)}
+                      startIcon={<RefreshIcon />}
+                      sx={{ flex: 1 }}
+                    >
+                      Refresh
+                    </Button>
+                  </Box>
                 </CardContent>
               </Card>
             )}

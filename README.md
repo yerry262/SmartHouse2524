@@ -15,6 +15,13 @@ A modern, full-stack smart home control system built with React.js and Node.js f
   - MAC address extraction for unique device identification
   - Automatic deduplication to prevent multiple entries
   - 15-second timeout for reliable Apple TV/AirPlay discovery
+  - iOS device detection via companion-link mDNS service
+- **📹 IP Camera Integration**: Full support for IP cameras with multiple stream types
+  - Generic camera proxy for any IP camera
+  - Multiple stream formats: Desktop (livesp.asp), Mobile (livemb.asp), MJPEG, Snapshot
+  - Stream type selector in camera viewer and device details
+  - Auto-detection of Hi3510-based cameras
+  - HTTP proxy to handle camera authentication
 - **💡 Philips Hue Control**: Full control of Hue lights, groups, rooms, and scenes
 - **🔌 TP-Link Kasa**: Control smart plugs, bulbs, and light strips with energy monitoring
 - **💡 LIFX Control**: Direct local control of LIFX smart bulbs and strips
@@ -25,8 +32,12 @@ A modern, full-stack smart home control system built with React.js and Node.js f
   - Preserves custom device names (Living Room, Game Room, etc.)
   - Filters out Mac computers from Apple TV list
   - Detects Mac devices separately with 'mac' type classification
+  - Samsung TV AirPlay support via pyatv
 - **🔔 Ring Integration**: Monitor Ring doorbells and cameras
-- **📹 Camera Feeds**: View and manage security camera streams
+- **🏠 SmartThings Integration**: Link SmartThings account for Nest thermostats and devices
+  - Token-based authentication via request headers
+  - Google Nest redirect to SmartThings (Nest requires SmartThings linking)
+- **📱 iOS Device Detection**: Discover iPhones and iPads on your network
 - **🌐 Network Monitoring**: Eero mesh network status and connected devices
 - **🔎 Subnet Scanner**: Angry IP Scanner-like port scanning and device identification
 - **📊 Smart Sidebar**: Accurate device counts by type with intelligent filtering

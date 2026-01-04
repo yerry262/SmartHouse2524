@@ -2,6 +2,7 @@ const SSDP = require('node-ssdp').Client;
 const Bonjour = require('bonjour-service').Bonjour;
 const fs = require('fs').promises;
 const path = require('path');
+const os = require('os');
 const NetworkScanner = require('./networkScanner');
 
 // Gracefully load optional packages
@@ -308,11 +309,145 @@ class DeviceDiscovery {
         }
       });
 
+      // Discover iOS devices (iPhones, iPads) via companion-link service
+      // This is the service iPhones advertise for AirPlay 2 / HomeKit pairing
+      const companionBrowser = this.bonjour.find({ type: 'companion-link' });
+      
+      companionBrowser.on('up', (service) => {
+        // Prefer IPv4 address over IPv6 link-local addresses
+        let primaryIp = service.addresses ? service.addresses[0] : null;
+        if (service.addresses && service.addresses.length > 0) {
+          const ipv4 = service.addresses.find(addr => !addr.includes(':'));
+          if (ipv4) {
+            primaryIp = ipv4;
+          }
+        }
+        
+        if (!primaryIp) return;
+        
+        // Extract info from txt records
+        let mac = null;
+        let model = null;
+        let deviceType = 'ios';
+        let deviceName = service.name || 'iOS Device';
+        
+        if (service.txt) {
+          // rpMd is the model identifier (e.g., "iPhone14,2" for iPhone 13 Pro)
+          if (service.txt.rpmd) {
+            model = service.txt.rpmd;
+          }
+          // Also check for model in other txt fields
+          if (!model && service.txt.model) {
+            model = service.txt.model;
+          }
+          // rppn is the peer name
+          if (service.txt.rppn) {
+            deviceName = service.txt.rppn;
+          }
+        }
+        
+        // Categorize by model name
+        if (model) {
+          if (model.startsWith('iPhone') || model.includes('iPhone')) {
+            deviceType = 'iphone';
+          } else if (model.startsWith('iPad') || model.includes('iPad')) {
+            deviceType = 'ipad';
+          } else if (model.startsWith('iPod') || model.includes('iPod')) {
+            deviceType = 'ipod';
+          }
+        }
+        
+        const device = {
+          id: this.generateId(mac || service.host || primaryIp),
+          type: deviceType,
+          name: deviceName,
+          hostname: service.host,
+          ip: primaryIp,
+          port: service.port,
+          mac: mac,
+          model: model,
+          status: 'online',
+          lastSeen: new Date().toISOString(),
+          metadata: service
+        };
+        
+        // Check for duplicates by IP
+        const isDuplicate = ssdpDiscovered.some(d => d.ip === device.ip);
+        
+        if (!isDuplicate) {
+          console.log(`Discovered iOS device: ${deviceName} (${model || 'unknown model'}) at ${primaryIp}`);
+          ssdpDiscovered.push(device);
+          global.broadcast({ type: 'device_discovered', device });
+        }
+      });
+
       ssdpClient.search('ssdp:all');
     }));
 
     // Wait for all discovery methods to complete
     await Promise.all(discoveryPromises);
+
+    // Quick network scan to catch devices that don't advertise (cameras, etc.)
+    try {
+      // Get local IP to determine subnet
+      const interfaces = os.networkInterfaces();
+      let localIP = null;
+      for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+          if (iface.family === 'IPv4' && !iface.internal) {
+            localIP = iface.address;
+            break;
+          }
+        }
+        if (localIP) break;
+      }
+
+      if (localIP) {
+        const subnet = localIP.split('.').slice(0, 3).join('.');
+        console.log(`Running quick network scan on ${subnet}.1-255...`);
+        
+        const scanResults = await this.networkScanner.scanSubnet(
+          `${subnet}.1`,
+          1,
+          255,
+          null // no progress callback for background scan
+        );
+
+        // Add discovered devices from network scan
+        scanResults.forEach(result => {
+          if (result.alive && result.deviceType !== 'unknown') {
+            const device = {
+              id: this.generateId(result.mac || result.ip),
+              name: this.networkScanner.generateDeviceName(result.deviceType, result.ip, result.hostname),
+              type: result.deviceType,
+              ip: result.ip,
+              hostname: result.hostname,
+              mac: result.mac,
+              vendor: result.vendor,
+              status: 'online',
+              lastSeen: new Date().toISOString(),
+              openPorts: result.openPorts,
+              confidence: result.confidence
+            };
+            
+            // Check for duplicates
+            const isDuplicate = discovered.some(d => 
+              (result.mac && d.mac && d.mac.replace(/[^a-fA-F0-9]/g, '').toLowerCase() === result.mac.replace(/[^a-fA-F0-9]/g, '').toLowerCase()) ||
+              d.ip === device.ip
+            );
+            
+            if (!isDuplicate) {
+              discovered.push(device);
+              global.broadcast({ type: 'device_discovered', device });
+            }
+          }
+        });
+        
+        console.log(`Network scan found ${scanResults.filter(r => r.alive).length} devices`);
+      }
+    } catch (error) {
+      console.error('Network scan error:', error.message);
+    }
 
     this.mergeDevices(discovered);
     console.log(`Discovery completed in ${(Date.now() - startTime) / 1000}s. Total devices found: ${discovered.length}`);

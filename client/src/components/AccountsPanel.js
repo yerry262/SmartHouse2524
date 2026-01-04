@@ -72,10 +72,11 @@ const accountProviders = [
     logo: brandLogos.google,
     color: '#4285F4',
     bgColor: '#fff',
-    description: 'Sync Chromecast, Home speakers, and Google-connected devices',
+    description: 'Discover Chromecast and Google Home speakers on your network',
     authType: 'oauth',
     fields: ['email'],
-    features: ['Chromecast', 'Home speakers', 'Routines', 'Smart displays'],
+    features: ['Chromecast', 'Google Home speakers', 'Nest Hub displays', 'Google TV'],
+    note: 'Uses mDNS discovery for Cast-enabled devices',
   },
   {
     id: 'nest',
@@ -83,10 +84,13 @@ const accountProviders = [
     logo: brandLogos.nest,
     color: '#00ACC1',
     bgColor: '#fff',
-    description: 'Connect Nest thermostats, cameras, doorbells, and sensors',
-    authType: 'oauth',
-    fields: ['email'],
+    description: 'Nest thermostats, cameras, doorbells, and sensors',
+    authType: 'redirect',
+    redirectTo: 'smartthings',
+    redirectMessage: 'Please link your Nest devices in the SmartThings app first, then connect SmartThings here',
+    fields: [],
     features: ['Thermostats', 'Cameras', 'Doorbells', 'Protect sensors'],
+    note: 'Nest devices must be linked via SmartThings integration',
   },
   {
     id: 'ring',
@@ -452,9 +456,24 @@ const AccountsPanel = ({ open, onClose, linkedAccounts = {}, onLinkAccount, onUn
                           </Box>
                         </Box>
 
+                        {/* Provider Note */}
+                        {provider.note && (
+                          <Box sx={{ mb: 1.5, p: 1, bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 1 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                              ℹ️ {provider.note}
+                            </Typography>
+                          </Box>
+                        )}
+
                         {/* Actions */}
                         <Box sx={{ display: 'flex', gap: 1 }}>
-                          {isLinked ? (
+                          {provider.authType === 'redirect' ? (
+                            <Alert severity="info" sx={{ width: '100%', py: 0.5 }}>
+                              <Typography variant="caption">
+                                {provider.redirectMessage}
+                              </Typography>
+                            </Alert>
+                          ) : isLinked ? (
                             <>
                               <Button
                                 size="small"

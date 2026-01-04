@@ -65,10 +65,19 @@ const SmartThingsPage = () => {
     }
   }, [isLinked]);
 
+  // Get headers with SmartThings token if available
+  const getHeaders = () => {
+    const headers = {};
+    if (accountData?.apiToken) {
+      headers['X-SmartThings-Token'] = accountData.apiToken;
+    }
+    return headers;
+  };
+
   const discoverDevices = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/smartthings/discover');
+      const response = await axios.get('/api/smartthings/discover', { headers: getHeaders() });
       setDevices(response.data.devices || []);
       
       if (!response.data.success) {
@@ -84,7 +93,7 @@ const SmartThingsPage = () => {
   const handleTestApi = async () => {
     setApiTestLoading(true);
     try {
-      const response = await axios.get('/api/smartthings/discover');
+      const response = await axios.get('/api/smartthings/discover', { headers: getHeaders() });
       setApiTestResult(response.data);
       setApiTestTimestamp(new Date().toLocaleString());
     } catch (err) {
@@ -96,7 +105,7 @@ const SmartThingsPage = () => {
 
   const getLocations = async () => {
     try {
-      const response = await axios.get('/api/smartthings/locations');
+      const response = await axios.get('/api/smartthings/locations', { headers: getHeaders() });
       setLocations(response.data.items || []);
     } catch (error) {
       console.error('Error fetching locations:', error);
@@ -105,7 +114,7 @@ const SmartThingsPage = () => {
 
   const getRooms = async (locationId) => {
     try {
-      const response = await axios.get(`/api/smartthings/locations/${locationId}/rooms`);
+      const response = await axios.get(`/api/smartthings/locations/${locationId}/rooms`, { headers: getHeaders() });
       setRooms(response.data.items || []);
     } catch (error) {
       console.error('Error fetching rooms:', error);
@@ -122,7 +131,7 @@ const SmartThingsPage = () => {
         capability: commandData.capability,
         command: commandData.command,
         arguments: args
-      });
+      }, { headers: getHeaders() });
 
       if (response.data.success) {
         console.log('Command sent successfully');

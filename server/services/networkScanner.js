@@ -2,6 +2,7 @@ const { exec } = require('child_process');
 const util = require('util');
 const dns = require('dns');
 const net = require('net');
+const http = require('http');
 
 const execPromise = util.promisify(exec);
 const dnsReverse = util.promisify(dns.reverse);
@@ -13,16 +14,21 @@ class NetworkScanner {
       22: 'SSH',
       23: 'Telnet',
       80: 'HTTP',
+      81: 'HTTP-Camera',
+      88: 'HTTP-Camera',
       443: 'HTTPS',
       554: 'RTSP',
       1400: 'Sonos',
       3689: 'DAAP',
       5000: 'UPnP',
       7000: 'AirPlay',
+      8000: 'HTTP-Camera',
       8008: 'Chromecast',
       8080: 'HTTP-Alt',
+      8081: 'HTTP-Camera',
       8443: 'HTTPS-Alt',
       8002: 'Samsung TV',
+      8888: 'HTTP-Camera',
       9000: 'HTTP-Alt',
       49152: 'UPnP'
     };
@@ -31,7 +37,7 @@ class NetworkScanner {
       'sonos': { ports: [1400, 1443], keywords: ['sonos'] },
       'samsung-tv': { ports: [8002, 8001], keywords: ['samsung', 'tv'] },
       'appletv': { ports: [3689, 7000], keywords: ['apple', 'tv'] },
-      'camera': { ports: [554, 8000, 80], keywords: ['camera', 'ipc', 'dvr', 'nvr'] },
+      'camera': { ports: [554, 8000, 80, 81, 88, 8080, 8081, 8888], keywords: ['camera', 'ipc', 'dvr', 'nvr', 'ipcam', 'cam', 'hikvision', 'dahua', 'foscam', 'amcrest'] },
       'ring': { ports: [443, 6334], keywords: ['ring', 'doorbell'] },
       'eero': { ports: [443, 80], keywords: ['eero', 'router'] },
       'printer': { ports: [631, 9100], keywords: ['printer', 'hp', 'canon', 'epson'] },
@@ -85,6 +91,18 @@ class NetworkScanner {
       const identification = this.identifyDevice(result.hostname, result.openPorts, result.mac);
       result.deviceType = identification.type;
       result.confidence = identification.confidence;
+
+      // If device has port 80 and is classified as eero/unknown/web-device, check if it's actually a camera
+      const portNumbers = result.openPorts.map(p => p.port);
+      if ((result.deviceType === 'eero' || result.deviceType === 'unknown' || result.deviceType === 'web-device') 
+          && portNumbers.includes(80)) {
+        const cameraCheck = await this.quickCameraProbe(ip, 80, 1500);
+        if (cameraCheck.isCamera) {
+          result.deviceType = 'camera';
+          result.confidence = 85;
+          console.log(`📷 Detected camera at ${ip} via HTTP probe`);
+        }
+      }
 
       // Get vendor from MAC
       result.vendor = this.getVendorFromMac(result.mac);
@@ -240,6 +258,90 @@ class NetworkScanner {
     return vendors[macPrefix] || 'Unknown';
   }
 
+  /**
+   * Quick HTTP probe to check if device is a camera
+   * Checks for common camera page signatures on multiple paths
+   */
+  async quickCameraProbe(ip, port = 80, timeout = 1500) {
+    // Try multiple camera paths, with and without auth
+    const cameraPaths = ['/', '/video/livemb.asp', '/video/livesp.asp', '/index.asp', '/setting.asp'];
+    
+    // First try without auth
+    for (const path of cameraPaths) {
+      const result = await this._probeUrlForCamera(ip, port, path, timeout, null);
+      if (result.isCamera) {
+        return result;
+      }
+    }
+    
+    // Try with common default auth (admin with empty password)
+    for (const path of cameraPaths) {
+      const result = await this._probeUrlForCamera(ip, port, path, timeout, { username: 'admin', password: '' });
+      if (result.isCamera) {
+        return result;
+      }
+    }
+    
+    return { isCamera: false };
+  }
+
+  async _probeUrlForCamera(ip, port, path, timeout = 1500, auth = null) {
+    return new Promise((resolve) => {
+      try {
+        const options = {
+          hostname: ip,
+          port: port,
+          path: path,
+          method: 'GET',
+          timeout: timeout,
+          headers: {
+            'User-Agent': 'Mozilla/5.0'
+          },
+          insecureHTTPParser: true // Handle malformed camera responses
+        };
+
+        // Add basic auth if provided
+        if (auth) {
+          const credentials = Buffer.from(`${auth.username}:${auth.password || ''}`).toString('base64');
+          options.headers['Authorization'] = `Basic ${credentials}`;
+        }
+
+        const req = http.request(options, (res) => {
+          let data = '';
+          res.on('data', chunk => data += chunk.toString().substring(0, 3000));
+          res.on('end', () => {
+            const lowerData = data.toLowerCase();
+            // Camera-specific signatures
+            const cameraKeywords = [
+              'ipcamera', 'ipcam', 'webcam', 'netcam', 'video', 'stream', 
+              'livemb', 'livesp', 'live view', 'cgi-bin/snapshot',
+              'p2p_uid', 'media/?action', 'mjpg', 'mjpeg',
+              'hikvision', 'dahua', 'foscam', 'amcrest', 'axis', 
+              'hi3510', 'dvr', 'nvr', 'surveillance', 'liveplg',
+              'camera', 'record', 'snapshot'
+            ];
+            
+            const isCamera = cameraKeywords.some(kw => lowerData.includes(kw));
+            resolve({ isCamera, path, data: data.substring(0, 500) });
+          });
+        });
+
+        req.on('timeout', () => {
+          req.destroy();
+          resolve({ isCamera: false, error: 'timeout' });
+        });
+
+        req.on('error', () => {
+          resolve({ isCamera: false, error: 'connection failed' });
+        });
+
+        req.end();
+      } catch (err) {
+        resolve({ isCamera: false, error: err.message });
+      }
+    });
+  }
+
   // Identify device type based on hostname and open ports
   identifyDevice(hostname, openPorts, mac = null) {
     let bestMatch = { type: 'unknown', confidence: 0 };
@@ -268,7 +370,12 @@ class NetworkScanner {
     if (bestMatch.confidence < 90 && portNumbers.includes(7000) && portNumbers.includes(49152)) {
       bestMatch = { type: 'appletv', confidence: 95 };
     }
-    // eero detection - typically only have 80/443 open
+    // Camera detection - common camera ports (81, 88, 8080, 8081, 8888) or RTSP (554)
+    else if (bestMatch.confidence < 70 && (portNumbers.includes(81) || portNumbers.includes(88) || 
+             portNumbers.includes(554) || portNumbers.includes(8081) || portNumbers.includes(8888))) {
+      bestMatch = { type: 'camera', confidence: 75 };
+    }
+    // eero detection - typically only have 80/443 open (but NOT camera ports)
     else if (bestMatch.confidence < 60 && portNumbers.includes(443) && portNumbers.includes(80) && portNumbers.length === 2) {
       // Only identify as eero if vendor matches or is unknown (avoids misidentifying printers/web servers)
       const vendor = this.getVendorFromMac(mac);
@@ -368,6 +475,11 @@ class NetworkScanner {
       'sonos': 'Sonos Speaker',
       'samsung-tv': 'Samsung TV',
       'appletv': 'Apple TV',
+      'iphone': 'iPhone',
+      'ipad': 'iPad',
+      'ipod': 'iPod',
+      'ios': 'iOS Device',
+      'mac': 'Mac',
       'camera': 'IP Camera',
       'ring': 'Ring Device',
       'eero': 'Eero Router',

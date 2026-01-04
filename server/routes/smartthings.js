@@ -15,15 +15,21 @@ try {
 // SmartThings configuration
 const SMARTTHINGS_API_URL = 'https://api.smartthings.com/v1';
 
-// Get SmartThings token from environment
-const getToken = () => {
+// Get SmartThings token from request header or environment
+const getToken = (req) => {
+  // First check for token in request header (from frontend linked accounts)
+  const headerToken = req?.headers?.['x-smartthings-token'];
+  if (headerToken) {
+    return headerToken;
+  }
+  // Fall back to environment variable
   return process.env.SMARTTHINGS_TOKEN || null;
 };
 
 // Discover SmartThings devices
 const discoverHandler = async (req, res) => {
   try {
-    const token = getToken();
+    const token = getToken(req);
     
     if (!token) {
       return res.json({
@@ -88,7 +94,7 @@ router.post('/discover', discoverHandler);
 // Get device status
 router.get('/:deviceId/status', async (req, res) => {
   try {
-    const token = getToken();
+    const token = getToken(req);
     
     if (!token) {
       return res.json({ error: 'SmartThings token not configured' });
@@ -114,7 +120,7 @@ router.get('/:deviceId/status', async (req, res) => {
 // Control device (execute command)
 router.post('/:deviceId/command', async (req, res) => {
   try {
-    const token = getToken();
+    const token = getToken(req);
     const { capability, command, arguments: args = [] } = req.body;
     
     if (!token) {
@@ -154,7 +160,7 @@ router.post('/:deviceId/command', async (req, res) => {
 // Get locations
 router.get('/locations', async (req, res) => {
   try {
-    const token = getToken();
+    const token = getToken(req);
     
     if (!token) {
       return res.json({ error: 'SmartThings token not configured' });
@@ -177,7 +183,7 @@ router.get('/locations', async (req, res) => {
 // Get rooms for a location
 router.get('/locations/:locationId/rooms', async (req, res) => {
   try {
-    const token = getToken();
+    const token = getToken(req);
     
     if (!token) {
       return res.json({ error: 'SmartThings token not configured' });

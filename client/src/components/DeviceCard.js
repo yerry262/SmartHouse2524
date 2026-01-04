@@ -17,6 +17,9 @@ import RouterIcon from '@mui/icons-material/Router';
 import DoorbellIcon from '@mui/icons-material/Doorbell';
 import SmartDisplayIcon from '@mui/icons-material/SmartDisplay';
 import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
+import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone';
+import TabletIcon from '@mui/icons-material/Tablet';
+import LaptopMacIcon from '@mui/icons-material/LaptopMac';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -86,6 +89,14 @@ const DeviceCard = ({ device, onRefresh }) => {
       return <TvIcon sx={{ fontSize: 40, color: '#1428A0' }} />;
     } else if (typeLower === 'appletv') {
       return <SmartDisplayIcon sx={{ fontSize: 40, color: '#A3A3A3' }} />;
+    } else if (typeLower === 'iphone' || typeLower === 'ipod') {
+      return <PhoneIphoneIcon sx={{ fontSize: 40, color: '#007AFF' }} />;
+    } else if (typeLower === 'ipad') {
+      return <TabletIcon sx={{ fontSize: 40, color: '#007AFF' }} />;
+    } else if (typeLower === 'ios') {
+      return <PhoneIphoneIcon sx={{ fontSize: 40, color: '#007AFF' }} />;
+    } else if (typeLower === 'mac') {
+      return <LaptopMacIcon sx={{ fontSize: 40, color: '#A3A3A3' }} />;
     } else if (typeLower.includes('camera')) {
       return <VideocamIcon sx={{ fontSize: 40, color: '#FF6B6B' }} />;
     } else if (typeLower === 'eero') {
@@ -105,6 +116,8 @@ const DeviceCard = ({ device, onRefresh }) => {
     if (typeLower.includes('wemo')) return { bgcolor: '#76b900', color: '#fff' };
     if (typeLower.includes('sonos')) return { bgcolor: '#00D1B2', color: '#fff' };
     if (typeLower.includes('appletv')) return { bgcolor: '#555', color: '#fff' };
+    if (typeLower === 'iphone' || typeLower === 'ipad' || typeLower === 'ipod' || typeLower === 'ios') return { bgcolor: '#007AFF', color: '#fff' };
+    if (typeLower === 'mac') return { bgcolor: '#555', color: '#fff' };
     if (typeLower.includes('hue')) return { bgcolor: '#FFB300', color: '#000' };
     if (typeLower.includes('tplink')) return { bgcolor: '#00BFA5', color: '#fff' };
     if (typeLower.includes('lifx')) return { bgcolor: '#4CAF50', color: '#fff' };

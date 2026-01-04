@@ -10,21 +10,24 @@ let discoveredAppleTVs = [];
 
 // Check if pyatv is installed - checking at startup
 let pyatvInstalled = false;
-const atvremotePath = process.platform === 'win32' 
+// Use env variable for path, fallback to default locations
+const atvremotePath = process.env.ATVREMOTE_PATH || (process.platform === 'win32' 
   ? 'atvremote.exe' 
-  : 'atvremote';
+  : 'atvremote');
 
 // Check by trying to scan (--version returns exit code 1)
-execPromise(`${atvremotePath} scan`, { timeout: 3000, windowsHide: true }).then(() => {
+execPromise(`"${atvremotePath}" scan`, { timeout: 5000, windowsHide: true }).then(() => {
   pyatvInstalled = true;
-  console.log('✅ pyatv is installed');
+  console.log(`✅ pyatv is installed (using: ${atvremotePath})`);
 }).catch((err) => {
   // If the error is just timeout, pyatv is installed but scan takes time
   if (err.killed || err.message.includes('scan')) {
     pyatvInstalled = true;
-    console.log('✅ pyatv is installed');
+    console.log(`✅ pyatv is installed (using: ${atvremotePath})`);
   } else {
     console.log('⚠️  pyatv not installed. Run: pip install pyatv');
+    console.log('   Set ATVREMOTE_PATH in .env to custom path if needed');
+    console.log('   Error:', err.message);
   }
 });
 
@@ -66,7 +69,7 @@ const discoverAppleTVs = async () => {
   // Also try pyatv scan if installed
   if (pyatvInstalled) {
     try {
-      const { stdout } = await execPromise('atvremote scan', { timeout: 20000, windowsHide: true });
+      const { stdout } = await execPromise(`"${atvremotePath}" scan`, { timeout: 20000, windowsHide: true });
       // Parse pyatv scan output - split by lines that start with "Name:"
       // This handles devices separated by varying amounts of whitespace
       const lines = stdout.split('\n');
@@ -174,12 +177,50 @@ const discoverAppleTVs = async () => {
   return devices;
 };
 
-// Get all Apple TVs
+// Get all Apple TVs (from pyatv scan + stored devices.json)
 router.get('/devices', async (req, res) => {
   try {
-    const devices = await discoverAppleTVs();
-    discoveredAppleTVs = devices;
-    res.json({ devices, pyatvInstalled });
+    // Get devices from pyatv scan
+    const scannedDevices = await discoverAppleTVs();
+    
+    // Also get Apple TVs from stored devices.json
+    const fs = require('fs');
+    const path = require('path');
+    const devicesPath = path.join(__dirname, '../data/devices.json');
+    let storedAppleTVs = [];
+    
+    if (fs.existsSync(devicesPath)) {
+      try {
+        const allDevices = JSON.parse(fs.readFileSync(devicesPath, 'utf8'));
+        storedAppleTVs = allDevices
+          .filter(d => d.type === 'appletv')
+          .map(d => ({
+            id: d.id || `appletv_${(d.ip || '').replace(/\./g, '_')}`,
+            name: d.name || d.hostname || `Apple TV (${d.ip})`,
+            ip: d.ip || d.ipAddress,
+            type: 'appletv',
+            model: d.model || d.metadata?.model || '',
+            mac: d.mac || d.metadata?.mac || '',
+            hostname: d.hostname || '',
+            discoveredBy: 'devices.json',
+          }));
+      } catch (err) {
+        console.log('Error reading devices.json for Apple TVs:', err.message);
+      }
+    }
+    
+    // Merge: prefer scanned devices, add stored ones that aren't duplicates
+    const allDevices = [...scannedDevices];
+    for (const stored of storedAppleTVs) {
+      const exists = allDevices.some(d => d.ip === stored.ip);
+      if (!exists && stored.ip) {
+        allDevices.push(stored);
+      }
+    }
+    
+    discoveredAppleTVs = allDevices;
+    console.log(`Apple TV: Returning ${allDevices.length} devices (${scannedDevices.length} scanned, ${storedAppleTVs.length} stored)`);
+    res.json({ devices: allDevices, pyatvInstalled });
   } catch (error) {
     res.status(500).json({ error: error.message, devices: [] });
   }
@@ -234,7 +275,7 @@ router.get('/devices/:id/status', async (req, res) => {
     }
     
     // Use pyatv to get status
-    const { stdout } = await execPromise(`atvremote -s ${device.ip} playing`, { timeout: 5000, windowsHide: true });
+    const { stdout } = await execPromise(`"${atvremotePath}" -s ${device.ip} playing`, { timeout: 5000, windowsHide: true });
     
     res.json({ 
       device: device.name,
@@ -258,7 +299,7 @@ router.get('/:ip/status', async (req, res) => {
     if (!deviceInfo) {
       // Do a quick scan to get device info
       try {
-        const { stdout: scanOutput } = await execPromise('atvremote scan', { timeout: 15000, windowsHide: true });
+        const { stdout: scanOutput } = await execPromise(`"${atvremotePath}" scan`, { timeout: 15000, windowsHide: true });
         // Mark pyatv as installed since the command worked
         pyatvInstalled = true;
         
@@ -301,7 +342,7 @@ router.get('/:ip/status', async (req, res) => {
     // Try to get playing status
     let playingStatus = null;
     try {
-      const { stdout: playingOutput } = await execPromise(`atvremote -s ${ip} playing`, { timeout: 10000, windowsHide: true });
+      const { stdout: playingOutput } = await execPromise(`"${atvremotePath}" -s ${ip} playing`, { timeout: 10000, windowsHide: true });
       playingStatus = playingOutput;
     } catch (playError) {
       // Device may require pairing
@@ -338,7 +379,7 @@ router.post('/:ip/pair', async (req, res) => {
     }
     
     // Start pairing process - this will show a PIN on the Apple TV
-    const { stdout } = await execPromise(`atvremote -s ${ip} pair`, { timeout: 30000, windowsHide: true });
+    const { stdout } = await execPromise(`"${atvremotePath}" -s ${ip} pair`, { timeout: 30000, windowsHide: true });
     
     if (global.activityLog) {
       global.activityLog.action('Apple TV', `Pairing started with ${ip}`);
@@ -400,7 +441,7 @@ router.post('/:ip/command', async (req, res) => {
     }
     
     // Send command via atvremote
-    await execPromise(`atvremote -s ${ip} ${atvCommand}`, { timeout: 5000, windowsHide: true });
+    await execPromise(`"${atvremotePath}" -s ${ip} ${atvCommand}`, { timeout: 5000, windowsHide: true });
     
     if (global.activityLog) {
       global.activityLog.action('Apple TV', `Sent ${command} to ${ip}`);

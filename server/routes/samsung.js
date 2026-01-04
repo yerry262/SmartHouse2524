@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
 let SamsungTvControl = null;
 
@@ -41,7 +43,36 @@ const checkTvReachable = (ip, port = 8001) => {
   });
 };
 
-// Helper to create TV instance with stored token
+// Cache for TV instances to maintain persistent connections
+const tvInstances = new Map();
+
+// Helper to get or create TV instance with stored token (connection caching)
+const getTvInstance = (ip, mac = '') => {
+  if (!SamsungTvControl) return null;
+  
+  // Return cached instance if exists
+  if (tvInstances.has(ip)) {
+    return tvInstances.get(ip);
+  }
+  
+  const storedToken = tvTokens.get(ip) || '';
+  const storedMac = tvMacs.get(ip) || mac || '00:00:00:00:00:00';
+  const tv = new SamsungTvControl({
+    ip,
+    mac: storedMac,
+    nameApp: 'SmartHouse2524',
+    port: 8002,
+    token: storedToken
+  });
+  
+  // Cache the instance
+  tvInstances.set(ip, tv);
+  console.log(`Samsung TV: Created cached connection for ${ip}`);
+  
+  return tv;
+};
+
+// Helper to create fresh TV instance (for pairing)
 const createTvInstance = (ip, mac = '') => {
   if (!SamsungTvControl) return null;
   
@@ -56,12 +87,51 @@ const createTvInstance = (ip, mac = '') => {
   });
 };
 
-// Discover Samsung TVs
+// Clear cached instance (call after pairing or on error)
+const clearTvInstance = (ip) => {
+  if (tvInstances.has(ip)) {
+    tvInstances.delete(ip);
+    console.log(`Samsung TV: Cleared cached connection for ${ip}`);
+  }
+};
+
+// Discover Samsung TVs (from registered list + devices.json)
 const discoverHandler = async (req, res) => {
   try {
-    // Also scan for any manually registered TVs that are online
+    // Get Samsung TVs from stored devices.json
+    const devicesPath = path.join(__dirname, '../data/devices.json');
+    let storedTVs = [];
+    
+    if (fs.existsSync(devicesPath)) {
+      try {
+        const allDevices = JSON.parse(fs.readFileSync(devicesPath, 'utf8'));
+        storedTVs = allDevices
+          .filter(d => d.type === 'samsung-tv')
+          .map(d => ({
+            ip: d.ip || d.ipAddress,
+            name: d.name || `Samsung TV (${d.ip})`,
+            mac: d.mac || d.metadata?.wifiMac || null,
+            model: d.model || d.metadata?.modelName || null,
+            manual: false,
+            source: 'devices.json'
+          }));
+      } catch (err) {
+        console.log('Error reading devices.json for Samsung TVs:', err.message);
+      }
+    }
+    
+    // Merge with manually registered TVs (prefer registered ones)
+    const allTVs = [...discoveredTVs];
+    for (const stored of storedTVs) {
+      const exists = allTVs.some(tv => tv.ip === stored.ip);
+      if (!exists && stored.ip) {
+        allTVs.push(stored);
+      }
+    }
+    
+    // Check which TVs are online
     const onlineTVs = [];
-    for (const tv of discoveredTVs) {
+    for (const tv of allTVs) {
       const check = await checkTvReachable(tv.ip);
       onlineTVs.push({
         ...tv,
@@ -69,6 +139,8 @@ const discoverHandler = async (req, res) => {
         info: check.info
       });
     }
+    
+    console.log(`Samsung TV: Returning ${onlineTVs.length} TVs (${discoveredTVs.length} registered, ${storedTVs.length} from devices.json)`);
     
     res.json({
       success: true,
@@ -216,7 +288,7 @@ router.post('/:ip/key', async (req, res) => {
       return res.status(400).json({ error: 'Key parameter is required' });
     }
     
-    const tv = createTvInstance(req.params.ip, req.query.mac);
+    const tv = getTvInstance(req.params.ip, req.query.mac);
 
     await tv.sendKey(key);
     
@@ -254,7 +326,7 @@ router.post('/:ip/app', async (req, res) => {
       return res.status(400).json({ error: 'appId parameter is required' });
     }
     
-    const tv = createTvInstance(req.params.ip, req.query.mac);
+    const tv = getTvInstance(req.params.ip, req.query.mac);
 
     await tv.openApp(appId);
     
@@ -289,7 +361,7 @@ router.get('/:ip/apps', async (req, res) => {
       return res.status(400).json({ error: 'Samsung TV Control package not installed' });
     }
     
-    const tv = createTvInstance(req.params.ip, req.query.mac);
+    const tv = getTvInstance(req.params.ip, req.query.mac);
 
     const apps = await tv.getAppsFromTV();
     
@@ -357,6 +429,129 @@ router.post('/:ip/token', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+// Pair with a Samsung TV - this will prompt on the TV to accept
+router.post('/:ip/pair', async (req, res) => {
+  try {
+    if (!SamsungTvControl) {
+      return res.status(400).json({ error: 'Samsung TV Control package not installed' });
+    }
+    
+    const ip = req.params.ip;
+    const { mac } = req.body;
+    
+    // Store MAC if provided
+    if (mac) {
+      tvMacs.set(ip, mac);
+    }
+    
+    // First check if TV is reachable
+    const check = await checkTvReachable(ip);
+    if (!check.online) {
+      return res.status(400).json({ 
+        error: 'TV is not reachable. Make sure the TV is on and connected to the network.',
+        online: false 
+      });
+    }
+    
+    // Get MAC from TV info if available
+    const wifiMac = check.info?.device?.wifiMac;
+    if (wifiMac && !tvMacs.get(ip)) {
+      tvMacs.set(ip, wifiMac);
+    }
+    
+    // Create TV instance and try to connect
+    // The first connection will prompt the user on the TV to accept
+    const storedMac = tvMacs.get(ip) || mac || wifiMac || '00:00:00:00:00:00';
+    const tv = new SamsungTvControl({
+      ip,
+      mac: storedMac,
+      nameApp: 'SmartHouse2524',
+      port: 8002,
+      token: '' // Empty token for initial pairing
+    });
+    
+    // Log pairing attempt
+    if (global.activityLog) {
+      global.activityLog.action('Samsung TV', `Initiating pairing with TV at ${ip}`);
+    }
+    
+    // Try to send a benign command to trigger the pairing prompt
+    // The TV will show "Allow SmartHouse2524 to connect?" dialog
+    try {
+      await tv.sendKey('KEY_INFO');
+      
+      // If we got here, the command was sent successfully
+      // The samsung-tv-control library should have received a token
+      // Try to extract it from the instance (implementation varies by library version)
+      const token = tv.token || tv._token || '';
+      
+      if (token) {
+        tvTokens.set(ip, token);
+        console.log(`Samsung TV: Token obtained for ${ip}`);
+        
+        // Clear cached instance so next command uses the token
+        clearTvInstance(ip);
+        
+        res.json({
+          success: true,
+          paired: true,
+          message: 'Pairing successful! TV is now connected.',
+          ip,
+          tokenStored: true
+        });
+      } else {
+        // Clear cached instance to force fresh connection with accepted permissions
+        clearTvInstance(ip);
+        
+        res.json({
+          success: true,
+          paired: true,
+          message: 'Command sent successfully. If you accepted on the TV, the connection is now paired. Try sending another command.',
+          ip,
+          tokenStored: false,
+          note: 'Token extraction not available in this library version. You may need to accept on the TV for each session.'
+        });
+      }
+    } catch (sendError) {
+      // This might happen if user denied or TV timed out
+      res.json({
+        success: false,
+        paired: false,
+        message: 'Pairing request sent to TV. Please accept the connection on your TV screen, then try again.',
+        instructions: [
+          '1. Look at your Samsung TV screen',
+          '2. Accept the connection from "SmartHouse2524"',
+          '3. Click "Pair" again to confirm pairing'
+        ],
+        error: sendError.message,
+        ip
+      });
+    }
+  } catch (error) {
+    console.error('Pairing error:', error);
+    res.status(500).json({ 
+      error: error.message,
+      message: 'Pairing failed. Make sure the TV is on and try again.'
+    });
+  }
+});
+
+// Check pairing status
+router.get('/:ip/paired', async (req, res) => {
+  const ip = req.params.ip;
+  const hasToken = tvTokens.has(ip);
+  const hasMac = tvMacs.has(ip);
+  
+  res.json({
+    ip,
+    paired: hasToken,
+    hasToken,
+    hasMac,
+    token: hasToken ? '(stored)' : null,
+    mac: tvMacs.get(ip) || null
+  });
 });
 
 module.exports = router;

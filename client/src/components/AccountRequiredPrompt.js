@@ -28,7 +28,8 @@ const brandConfigs = {
     color: '#4285F4',
     bgColor: '#fff',
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Google_Home_logo.png/600px-Google_Home_logo.png',
-    features: ['Chromecast', 'Home speakers', 'Routines', 'Smart displays'],
+    features: ['Chromecast', 'Google Home speakers', 'Nest Hub displays', 'Google TV'],
+    note: 'Discovers Cast-enabled devices on your network',
   },
   nest: {
     name: 'Google Nest',
@@ -36,6 +37,8 @@ const brandConfigs = {
     bgColor: '#fff',
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Nest_Labs_logo.svg/512px-Nest_Labs_logo.svg.png',
     features: ['Thermostats', 'Cameras', 'Doorbells', 'Protect sensors'],
+    redirectTo: 'smartthings',
+    redirectMessage: 'Link Nest devices via SmartThings app, then connect SmartThings here',
   },
   ring: {
     name: 'Ring',
