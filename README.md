@@ -58,7 +58,7 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone or Navigate to the Repository
 
 ```bash
-cd c:\Users\jerry\Desktop\SmartHouse2524
+cd c:\Users\jerry\OneDrive\Desktop\REPOs\SmartHouse2524
 ```
 
 ### 2. Install Dependencies
