@@ -78,36 +78,66 @@ function App() {
   };
 
   useEffect(() => {
-    // WebSocket connection for real-time updates
+    // WebSocket connection for real-time updates, with auto-reconnect so the
+    // dashboard keeps receiving live updates after a server restart (common in
+    // dev with nodemon) without requiring a manual page refresh.
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsHost = window.location.hostname;
     const wsPort = process.env.NODE_ENV === 'development' ? '5000' : window.location.port;
     const wsUrl = `${wsProtocol}//${wsHost}:${wsPort}`;
-    const ws = new WebSocket(wsUrl);
-    
-    ws.onopen = () => {
-      console.log('WebSocket connected');
-      setWsConnected(true);
-    };
-    
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log('WebSocket message:', data);
-      
-      if (data.type === 'device_discovered' || data.type === 'device_updated') {
-        fetchDevices();
-      }
-    };
-    
-    ws.onclose = () => {
-      console.log('WebSocket disconnected');
-      setWsConnected(false);
+
+    let ws;
+    let reconnectTimer;
+    let reconnectAttempts = 0;
+    let closedByCleanup = false;
+
+    const connect = () => {
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        reconnectAttempts = 0;
+        setWsConnected(true);
+      };
+
+      ws.onmessage = (event) => {
+        let data;
+        try {
+          data = JSON.parse(event.data);
+        } catch (err) {
+          console.error('Failed to parse WebSocket message:', err);
+          return;
+        }
+        console.log('WebSocket message:', data);
+
+        if (data.type === 'device_discovered' || data.type === 'device_updated') {
+          fetchDevices();
+        }
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected');
+        setWsConnected(false);
+        if (closedByCleanup) return;
+        // Exponential backoff capped at 10s.
+        const delay = Math.min(1000 * 2 ** reconnectAttempts, 10000);
+        reconnectAttempts += 1;
+        reconnectTimer = setTimeout(connect, delay);
+      };
+
+      ws.onerror = () => {
+        // Let onclose drive the reconnect; just close so it fires.
+        ws.close();
+      };
     };
 
+    connect();
     fetchDevices();
 
     return () => {
-      ws.close();
+      closedByCleanup = true;
+      clearTimeout(reconnectTimer);
+      if (ws) ws.close();
     };
   }, []);
 
