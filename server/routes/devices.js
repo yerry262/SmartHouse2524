@@ -60,7 +60,10 @@ router.get('/', async (req, res) => {
     // Only filter out WeMo devices since we fetch those live (other types come from devices.json)
     // WeMo live data is fast - just reads from in-memory map
     const liveTypes = ['wemo-plug', 'wemo'];
-    devices = devices.filter(d => !liveTypes.some(t => d.type.toLowerCase().includes(t.toLowerCase())));
+    devices = devices.filter(d => {
+      const type = (d.type || '').toLowerCase();
+      return !liveTypes.some(t => type.includes(t));
+    });
     
     // Update live cache
     await updateLiveDeviceCache();

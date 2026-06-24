@@ -561,10 +561,19 @@ class DeviceDiscovery {
         this.devices[existingIndex] = mergedDevice;
 
       } else {
+        // Skip "offline placeholder" entries produced by subnet/single-IP scans
+        // of dead IPs. These only carry { ip, status: 'offline' } with no name
+        // or type. Without this guard every dead IP in a scanned subnet (up to
+        // ~255 of them) would be saved as an empty phantom device, polluting
+        // devices.json and later crashing consumers that read device.type/name.
+        if (newDevice.status === 'offline' && !newDevice.name && !newDevice.type) {
+          return;
+        }
+
         // Add new device
         // Ensure ID is generated from MAC if available, else IP
         const id = this.generateId(newDevice.mac || newDevice.ip);
-        
+
         const deviceToAdd = {
           ...newDevice,
           id: id,
@@ -604,11 +613,11 @@ class DeviceDiscovery {
   }
 
   async searchDevices(query) {
-    const lowerQuery = query.toLowerCase();
-    return this.devices.filter(device => 
-      device.name.toLowerCase().includes(lowerQuery) ||
-      device.type.toLowerCase().includes(lowerQuery) ||
-      device.ip.includes(lowerQuery)
+    const lowerQuery = (query || '').toLowerCase();
+    return this.devices.filter(device =>
+      (device.name || '').toLowerCase().includes(lowerQuery) ||
+      (device.type || '').toLowerCase().includes(lowerQuery) ||
+      (device.ip || '').includes(lowerQuery)
     );
   }
 
