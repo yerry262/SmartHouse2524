@@ -269,12 +269,22 @@ router.post('/:id/ptz', async (req, res) => {
       
       const cmdCode = ptzCommands[direction] ?? 1;
       const cmdUrl = `http://${camera.ip}:${camera.port || 80}/video/cmd_req.asp?ptz_cmd=${cmdCode}`;
-      
-      // TODO: Make HTTP request to camera
-      res.json({
-        success: true,
-        message: `PTZ command ${direction} sent`,
-        cameraId: camera.id
+
+      const options = { headers: {} };
+      if (camera.username) {
+        const credentials = Buffer.from(`${camera.username}:${camera.password || ''}`).toString('base64');
+        options.headers['Authorization'] = `Basic ${credentials}`;
+      }
+
+      http.get(cmdUrl, options, (cameraRes) => {
+        cameraRes.resume();
+        res.json({
+          success: true,
+          message: `PTZ command ${direction} sent`,
+          cameraId: camera.id
+        });
+      }).on('error', (err) => {
+        res.status(502).json({ error: `PTZ command failed: ${err.message}` });
       });
     } else {
       res.json({
