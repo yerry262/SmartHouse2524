@@ -28,3 +28,9 @@ Thumbs.db
 credentials/
 *.pem
 *.key
+
+# Scratch / throwaway output
+scratch/
+
+# Auto-generated device DB backups
+server/data/*.backup.*.json

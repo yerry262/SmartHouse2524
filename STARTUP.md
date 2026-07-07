@@ -6,7 +6,7 @@ This document explains how to run SmartHouse2524 as a background service that au
 
 ### Start Services
 ```powershell
-cd C:\Users\jerry\Desktop\SmartHouse2524
+cd C:\Users\jerry\OneDrive\Desktop\REPOs\SmartHouse2524
 pm2 start ecosystem.config.js
 ```
 
@@ -51,7 +51,7 @@ SmartHouse2524 uses **PM2** (Process Manager 2) to run as a background service w
 
 ### Using PowerShell Script
 ```powershell
-cd C:\Users\jerry\Desktop\SmartHouse2524
+cd C:\Users\jerry\OneDrive\Desktop\REPOs\SmartHouse2524
 
 # Check status
 .\service.ps1 status
@@ -100,7 +100,7 @@ pm2 monit
 
 ## 📋 Log Files
 
-Logs are stored in `C:\Users\jerry\Desktop\SmartHouse2524\logs\`:
+Logs are stored in `C:\Users\jerry\OneDrive\Desktop\REPOs\SmartHouse2524\logs\`:
 
 | File | Description |
 |------|-------------|
@@ -163,7 +163,7 @@ module.exports = {
     {
       name: 'smarthouse-backend',
       script: 'index.js',
-      cwd: 'C:/Users/jerry/Desktop/SmartHouse2524/server',
+      cwd: 'C:/Users/jerry/OneDrive/Desktop/REPOs/SmartHouse2524/server',
       exec_mode: 'fork',
       autorestart: true,        // Auto-restart on crash
       max_memory_restart: '500M', // Restart if memory exceeds 500MB
@@ -178,7 +178,7 @@ module.exports = {
     {
       name: 'smarthouse-frontend',
       script: 'node_modules/react-scripts/scripts/start.js',
-      cwd: 'C:/Users/jerry/Desktop/SmartHouse2524/client',
+      cwd: 'C:/Users/jerry/OneDrive/Desktop/REPOs/SmartHouse2524/client',
       exec_mode: 'fork',
       autorestart: true,
       max_memory_restart: '1G',
@@ -287,4 +287,3 @@ pm2 describe smarthouse-backend
 
 ### Utility Scripts
 - `server/utils/deduplicate-devices.js` - Remove duplicate devices from database
-- `server/utils/fix-apple-tvs.js` - Fix Apple TV device entries
